@@ -31,6 +31,10 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 
 ## Note for this repo
 
-`redline` is a **public** GitHub repository, and `.scratch/` is not gitignored.
-Anything written here is visible to anyone once it is committed and pushed.
-Keep client names, contract text, and anything else private out of these files.
+`redline` is a **public** GitHub repository, so `.scratch/` is gitignored on
+purpose: tickets here will quote contract text, and that must not be published.
+
+Two things follow from that. These files live on this machine only — they are
+never pushed, so nothing here is backed up and no one else can read it. And
+never `git add -f` a file under `.scratch/`; the force flag overrides the rule
+and publishes it.

@@ -144,6 +144,11 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 !.vscode/settings.json.example
 
+# --- Working notes ---------------------------------------------
+# Issue tickets and specs live here (see docs/agents/issue-tracker.md).
+# They quote contract text, and this repo is public, so they stay local.
+.scratch/
+
 # --- Misc -----------------------------------------------------
 *.tgz
 *.tar.gz
