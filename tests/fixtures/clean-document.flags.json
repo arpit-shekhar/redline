@@ -1,0 +1,11 @@
+{
+  "document": "clean-document.txt",
+  "documentType": "freelance agreement",
+  "planted": [],
+  "questions": [
+    {
+      "question": "Can I hire another illustrator to help me finish the work?",
+      "expect": "not-addressed"
+    }
+  ]
+}

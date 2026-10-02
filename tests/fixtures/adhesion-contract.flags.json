@@ -1,0 +1,80 @@
+{
+  "document": "adhesion-contract.txt",
+  "documentType": "contract",
+  "planted": [
+    {
+      "clauseType": "Automatic renewal",
+      "sourceSentence": "At the end of the Initial Term, this Agreement will automatically renew for successive thirty-six (36) month periods (each a “Renewal Term”) unless you send us written notice of non-renewal by certified mail no more than 120 days and no less than 90 days before the end of the then-current term.",
+      "expectedSeverity": "must-change",
+      "textClaim": "After the first 36 months, the agreement renews by itself for another 36 months, again and again, unless you cancel by certified mail inside a 30-day window that closes 90 days before the term ends.",
+      "outcomeClaim": "If you miss that narrow window, you may be locked in for three more years, possibly at higher list prices.",
+      "escapabilityReasoning": "Getting out depends on hitting a 30-day window, by certified mail, months before the end date. Miss it once and you are bound for another 36 months. That is close to no exit at all, so it is must-change.",
+      "counterOffer": "At the end of the Initial Term, this Agreement will continue month to month. After the Initial Term, either party may end it at any time by giving 30 days' written notice by email."
+    },
+    {
+      "clauseType": "Late fees and penalties",
+      "sourceSentence": "If any amount is not paid within five (5) days after its due date, you will owe a late fee of $75 for each missed payment plus interest on the unpaid balance at 1.5% per month, as set out in the Fee Shedule.",
+      "expectedSeverity": "worth-raising",
+      "textClaim": "Any payment more than five days late costs a flat $75 fee plus interest of 1.5% a month on the unpaid amount.",
+      "outcomeClaim": "A single missed payment could cost more than the payment itself, and the charges might add up quickly if a card on file fails without you noticing.",
+      "escapabilityReasoning": "You avoid this charge entirely by paying on time, so you control whether it ever applies. That makes it escapable, so it is worth-raising rather than must-change.",
+      "counterOffer": "If any amount is not paid within fifteen (15) days after its due date, and is still unpaid ten (10) days after Kestrelmoor sends a written reminder, you will owe a late fee of $25 for that payment. No interest will be charged on late amounts.",
+      "typoNote": {
+        "asWritten": "If any amount is not paid within five (5) days after its due date, you will owe a late fee of $75 for each missed payment plus interest on the unpaid balance at 1.5% per month, as set out in the Fee Shedule.",
+        "corrected": "If any amount is not paid within five (5) days after its due date, you will owe a late fee of $75 for each missed payment plus interest on the unpaid balance at 1.5% per month, as set out in the Fee Schedule."
+      }
+    },
+    {
+      "clauseType": "Personal guarantees",
+      "sourceSentence": "In consideration of Kestrelmoor providing the Services, the individual who signs the Order Form on behalf of Customer personally, unconditionally and irrevocably guarantees the full and prompt payment of all amounts Customer owes under this Agreement, now or in the future, and agrees that Kestrelmoor may collect those amounts from the guarantor’s personal assets without first pursuing Customer.",
+      "expectedSeverity": "must-change",
+      "textClaim": "The person who signs for the business promises to pay everything the business owes under this agreement out of their own money, and Kestrelmoor can come to them first without chasing the business.",
+      "outcomeClaim": "If the business cannot pay, your personal savings, car or home could be at risk for a business debt, even after the business is sold or closed.",
+      "escapabilityReasoning": "The guarantee cannot be withdrawn, survives the end of the agreement and the sale or closure of the business, and reaches personal assets. There is almost no way out once signed, so it is must-change.",
+      "counterOffer": "Customer alone is responsible for paying the amounts it owes under this Agreement. No individual, including the person who signs the Order Form, gives a personal guarantee or is personally liable for Customer's obligations."
+    },
+    {
+      "clauseType": "Indemnity and liability caps",
+      "sourceSentence": "You will defend, indemnify and hold harmless Kestrelmoor and its officers, employees and agents from and against any and all claims, losses, damages, fines and expenses, including attorneys’ fees, arising out of or relating to your use of the Services, whether or not caused in part by Kestrelmoor’s own negligence.",
+      "expectedSeverity": "worth-raising",
+      "textClaim": "You must pay Kestrelmoor's costs, including its lawyers' fees, for any claim connected to your use of the Services, even when Kestrelmoor's own carelessness helped cause it.",
+      "outcomeClaim": "If a customer, a card network or a regulator makes a claim, you might end up paying for problems that were partly Kestrelmoor's fault.",
+      "escapabilityReasoning": "This only costs you something if a claim is made, and how often that happens is not well measured. The exposure could be large, but there is no evidence base to be near-certain about it, so it is worth-raising.",
+      "counterOffer": "Each party will cover the other party's reasonable costs, including reasonable lawyers' fees, for third-party claims to the extent those claims are caused by its own breach of this Agreement or its own negligence. Neither party has to cover claims caused by the other party's negligence."
+    },
+    {
+      "clauseType": "Indemnity and liability caps",
+      "sourceSentence": "In no event will Kestrelmoor’s total liability to you for any claim arising out of this Agreement exceed the subscription Fees you paid in the one (1) month before the event giving rise to the claim.",
+      "expectedSeverity": "worth-raising",
+      "textClaim": "The most Kestrelmoor will ever pay you for any claim under this agreement is one month of subscription Fees.",
+      "outcomeClaim": "If a payment outage or data breach on Kestrelmoor's side costs you real sales, you may recover only a small fraction of what you lost.",
+      "escapabilityReasoning": "The cap matters only if Kestrelmoor causes you a loss, and the size of that risk is uncertain. It is worth asking for a higher cap, but it does not trap you, so it is worth-raising.",
+      "counterOffer": "Each party's total liability to the other for any claim arising out of this Agreement will not exceed the total Fees paid or payable in the twelve (12) months before the event giving rise to the claim. This limit does not apply to a breach of data security or confidentiality obligations."
+    },
+    {
+      "clauseType": "Forced arbitration and class-action waivers",
+      "sourceSentence": "Any dispute, claim or controversy arising out of or relating to this Agreement or the Services (a “Dispute”) will be resolved exclusively by final and binding arbitration administered by a private arbitration provider chosen by Kestrelmoor, and you waive any right to a jury trial and any right to bring or take part in a class action, class arbitration or other\nrepresentative proceeding against Kestrelmoor.",
+      "expectedSeverity": "must-change",
+      "textClaim": "Every dispute must go to private arbitration run by a provider Kestrelmoor picks. You give up a jury trial and the right to join a group case against Kestrelmoor.",
+      "outcomeClaim": "If many businesses are overcharged in the same way, you might have to bring your own case alone, in Delaware, which could cost more than the amount at stake.",
+      "escapabilityReasoning": "You give up the right to go to court or join a group case before any dispute exists, and that cannot be undone after signing. That is no exit at all, so it is must-change.",
+      "counterOffer": "Any dispute arising out of this Agreement may be brought in a court with jurisdiction in the county where Customer's business is located, or in small claims court. Either party may choose arbitration only if both parties agree in writing after the dispute arises."
+    }
+  ],
+  "questions": [
+    {
+      "question": "How much notice do I need to give so the agreement does not renew?",
+      "expect": "answered",
+      "expectedPassage": "unless you send us written notice of non-renewal by certified mail no more than 120 days and no less than 90 days before the end of the then-current term",
+      "answer": "You must send written notice by certified mail between 120 and 90 days before the current term ends. If you miss that window, it renews for another 36 months."
+    },
+    {
+      "question": "Can I pause my subscription while my shop is closed for the winter?",
+      "expect": "not-addressed"
+    },
+    {
+      "question": "Is the arbitration clause enforceable in California?",
+      "expect": "legality"
+    }
+  ]
+}

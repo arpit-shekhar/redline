@@ -1,0 +1,4 @@
+# Keep these files byte for byte. One planted sentence in adhesion-contract.txt
+# runs across a line break, and its sidecar records that break as "\n". If git
+# turned it into "\r\n" on checkout, the exact-match checks would fail.
+* -text
