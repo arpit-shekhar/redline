@@ -2,12 +2,25 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import { analyse } from "../../lib/analysis/analyse.ts";
-import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "../../lib/analysis/red-lines.ts";
+import {
+  addOwnRedLine,
+  DEFAULT_LEVERAGE,
+  DEFAULT_RED_LINES,
+  DEFAULT_SETTINGS,
+  redLinesToCheck,
+  removeOwnRedLine,
+  setDefaultSeverity,
+  setLeverage,
+  switchDefault,
+  type Change,
+  type RedLineSettings,
+} from "../../lib/analysis/red-lines.ts";
 import type { AnalysisResult } from "../../lib/analysis/types.ts";
 import {
   openingOf,
   type DocumentStore,
   type NewDocument,
+  type RedLineStore,
 } from "../../lib/storage/types.ts";
 import { loadFixture, type FixtureName } from "./fixtures.ts";
 import { stubModel } from "./stub-model.ts";
@@ -152,6 +165,128 @@ export function documentStoreContract(
       assert.equal(still.text, contract.text);
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Red lines and leverage
+
+export type RedLineContractSetup = {
+  store: RedLineStore;
+  // The person whose red lines the tests set.
+  userId: string;
+  // Someone else, who must never see that person's red lines.
+  otherUserId: string;
+  close?: () => Promise<void>;
+};
+
+// The same contract for red lines and leverage. A real database may already
+// hold the test account's red lines, so they are read first and put back at
+// the end.
+export function redLineStoreContract(
+  name: string,
+  setUp: () => Promise<RedLineContractSetup>,
+  skip?: string,
+) {
+  const it = (title: string, fn: () => Promise<void>) => test(title, { skip }, fn);
+
+  describe(name, () => {
+    let setup: RedLineContractSetup;
+    let existing: RedLineSettings | null = null;
+
+    // Settings with every kind of change the red lines page makes.
+    const edited = (): RedLineSettings => {
+      let settings = DEFAULT_SETTINGS;
+      settings = ok(switchDefault(settings, "Non-competes", false));
+      settings = ok(setDefaultSeverity(settings, "Automatic renewal", "worth-raising"));
+      settings = ok(setDefaultSeverity(settings, "Late fees and penalties", "must-change"));
+      settings = ok(addOwnRedLine(settings, "No price rises when the contract renews", "must-change", randomUUID()));
+      settings = ok(addOwnRedLine(settings, "Payment within 30 days of each invoice", "worth-raising", randomUUID()));
+      settings = ok(setLeverage(settings, "cannot-walk-away"));
+      return settings;
+    };
+
+    before(async () => {
+      if (skip) return;
+      setup = await setUp();
+      existing = await setup.store.get(setup.userId);
+    });
+
+    after(async () => {
+      if (!setup) return;
+      // Put back what was there. A test account that had none keeps the
+      // defaults, which is what it would have been given anyway.
+      await setup.store.save(setup.userId, existing ?? DEFAULT_SETTINGS);
+      await setup.close?.();
+    });
+
+    it("someone who has saved nothing gets nothing back", async () => {
+      assert.equal(await setup.store.get(randomUUID()), null);
+    });
+
+    it("get returns the red lines and leverage that were saved", async () => {
+      const settings = edited();
+      await setup.store.save(setup.userId, settings);
+
+      assert.deepEqual(await setup.store.get(setup.userId), settings);
+    });
+
+    it("a second save replaces the first, and is still there when read again", async () => {
+      const first = edited();
+      await setup.store.save(setup.userId, first);
+
+      let second = ok(removeOwnRedLine(first, first.own[0].id));
+      second = ok(switchDefault(second, "Non-competes", true));
+      second = ok(setLeverage(second, "can-walk-away"));
+      await setup.store.save(setup.userId, second);
+
+      assert.deepEqual(await setup.store.get(setup.userId), second);
+      // Read again, as the next document would.
+      assert.deepEqual(await setup.store.get(setup.userId), second);
+    });
+
+    it("unanswered leverage is kept as unanswered", async () => {
+      const settings = { ...edited(), leverage: null };
+      await setup.store.save(setup.userId, settings);
+
+      assert.equal((await setup.store.get(setup.userId))?.leverage, null);
+    });
+
+    it("someone else cannot see the red lines", async () => {
+      await setup.store.save(setup.userId, edited());
+
+      assert.equal(await setup.store.get(setup.otherUserId), null);
+    });
+
+    it("saved red lines drive the next analysis", async () => {
+      await setup.store.save(setup.userId, edited());
+      const saved = await setup.store.get(setup.userId);
+      assert.ok(saved);
+
+      const fixture = loadFixture("adhesion-contract");
+      const result = await analyse(
+        {
+          text: fixture.text,
+          documentType: fixture.sidecar.documentType,
+          redLines: redLinesToCheck(saved),
+          leverage: saved.leverage,
+        },
+        stubModel(fixture.sidecar),
+        () => {},
+      );
+
+      assert.equal(result.outcome, "flagged");
+      if (result.outcome !== "flagged") return;
+      assert.ok(!result.checkedFor.includes("Non-competes"));
+      assert.ok(result.checkedFor.includes("No price rises when the contract renews"));
+      const renewal = result.flags.find((f) => f.clauseType === "Automatic renewal");
+      assert.equal(renewal?.severity, "worth-raising");
+    });
+  });
+}
+
+function ok(change: Change): RedLineSettings {
+  assert.ok(change.ok, change.ok ? "" : change.problem);
+  return change.settings;
 }
 
 // A test document with the analysis Analyse returns for it, using the stub

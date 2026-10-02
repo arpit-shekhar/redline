@@ -2,13 +2,14 @@
 
 import { analyse } from "@/lib/analysis/analyse.ts";
 import { isTooLong, tooLongMessage } from "@/lib/analysis/limits.ts";
-import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "@/lib/analysis/red-lines.ts";
+import { hasSomethingToCheck, redLinesToCheck } from "@/lib/analysis/red-lines.ts";
 import {
   isDocumentType,
   type AnalysisResult,
   type DocumentType,
 } from "@/lib/analysis/types.ts";
-import { openLibrary } from "@/lib/storage/session.ts";
+import { readerRedLines, type ReaderRedLines } from "@/lib/storage/reader-red-lines.ts";
+import { openLibrary, type Library } from "@/lib/storage/session.ts";
 
 // What happened to the library copy of a finished analysis.
 export type LibraryNote =
@@ -32,6 +33,9 @@ export type AnalyseState =
       text: string;
       result: AnalysisResult;
       library: LibraryNote;
+      // Whose red lines the analysis looked for. "unreachable" means the
+      // reader's own could not be read, so the eight defaults were used.
+      redLines: ReaderRedLines["source"];
     }
   | {
       // The analysis failed and nothing from it is shown. The text and type
@@ -59,17 +63,29 @@ export async function analyseDocument(
     return { status: "invalid", message: tooLongMessage(text) };
   }
 
+  // The signed-in reader's red lines and leverage drive the analysis.
+  // Anyone else gets the eight defaults, with leverage unanswered.
+  const library = await openLibrary();
+  const redLines = await readerRedLines(library);
+  if (!hasSomethingToCheck(redLines.settings)) {
+    return {
+      status: "invalid",
+      message:
+        "All your red lines are switched off, so Redline has nothing to look for. Switch at least one back on in Red lines.",
+    };
+  }
+
   try {
     const result = await analyse({
       text,
       documentType,
-      redLines: DEFAULT_RED_LINES,
-      leverage: DEFAULT_LEVERAGE,
+      redLines: redLinesToCheck(redLines.settings),
+      leverage: redLines.settings.leverage,
     });
     // Analyse has already written why it failed to the server log.
     if (result.outcome === "failed") return { status: "failed", text, documentType };
-    const library = await keepInLibrary({ documentType, text, analysis: result });
-    return { status: "done", text, result, library };
+    const kept = await keepInLibrary(library, { documentType, text, analysis: result });
+    return { status: "done", text, result, library: kept, redLines: redLines.source };
   } catch (error) {
     // Analyse reports its own failures as an outcome, so this is a mistake in
     // the call itself. The details stay in the server log. Never log the
@@ -82,13 +98,15 @@ export async function analyseDocument(
 // Saves a finished analysis to the reader's library when someone is signed
 // in. A failure to save never hides the analysis: the reader still sees it,
 // with a line saying it was not kept.
-async function keepInLibrary(document: {
-  documentType: DocumentType;
-  text: string;
-  analysis: AnalysisResult;
-}): Promise<LibraryNote> {
+async function keepInLibrary(
+  library: Library,
+  document: {
+    documentType: DocumentType;
+    text: string;
+    analysis: AnalysisResult;
+  },
+): Promise<LibraryNote> {
   try {
-    const library = await openLibrary();
     if (library.status === "no-storage" || library.status === "signed-out") {
       return { status: "not-signed-in" };
     }

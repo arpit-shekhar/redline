@@ -1,7 +1,15 @@
 import {
+  DEFAULT_RED_LINES,
+  type OwnRedLine,
+  type RedLineSettings,
+} from "../analysis/red-lines.ts";
+import {
   isDocumentType,
+  isLeverage,
+  isSeverity,
   type AnalysisResult,
   type DocumentType,
+  type RedLine,
 } from "../analysis/types.ts";
 
 // Storage (spec, "Seams", seam 3). One interface, more than one way to keep
@@ -51,10 +59,20 @@ export type DocumentStore = {
   delete(userId: string, id: string): Promise<boolean>;
 };
 
-// Everything one kind of storage keeps. Red lines and leverage join the
-// documents here when they are built (ticket 06).
+// One reader's red lines and leverage, kept together (ADR 0005). Each reader
+// has one set, which every save replaces whole.
+export type RedLineStore = {
+  // This user's red lines and leverage, or null if they have never saved any.
+  // The caller then uses DEFAULT_SETTINGS.
+  get(userId: string): Promise<RedLineSettings | null>;
+  // Replaces this user's red lines and leverage with these.
+  save(userId: string, settings: RedLineSettings): Promise<void>;
+};
+
+// Everything one kind of storage keeps.
 export type Storage = {
   documents: DocumentStore;
+  redLines: RedLineStore;
 };
 
 // The store could not do what it was asked, for example because the database
@@ -119,4 +137,57 @@ export function readDocumentType(value: unknown): DocumentType {
     throw new StorageError("A stored document has an unknown document type.");
   }
   return value;
+}
+
+// Red lines read back from storage. The eight defaults always come back in
+// their usual order: a default missing from the stored list (for example one
+// added to Redline after the reader last saved) comes back as it starts, and
+// a stored clause type Redline no longer has is dropped. Anything that is not
+// the shape Redline saves is an error, so a broken row is never mistaken for
+// the reader's choice.
+export function readRedLineSettings(
+  defaults: unknown,
+  own: unknown,
+  leverage: unknown,
+): RedLineSettings {
+  if (!Array.isArray(defaults) || !Array.isArray(own)) {
+    throw new StorageError("Stored red lines are not in the shape Redline saves.");
+  }
+  if (leverage !== null && !isLeverage(leverage)) {
+    throw new StorageError("Stored leverage is not one Redline knows.");
+  }
+  const stored = new Map<string, RedLine>();
+  for (const entry of defaults) {
+    const line = entry as Partial<RedLine> | null;
+    if (
+      !line ||
+      typeof line.clauseType !== "string" ||
+      !isSeverity(line.severity) ||
+      typeof line.enabled !== "boolean"
+    ) {
+      throw new StorageError("A stored red line is not in the shape Redline saves.");
+    }
+    stored.set(line.clauseType, {
+      clauseType: line.clauseType,
+      severity: line.severity,
+      enabled: line.enabled,
+    });
+  }
+  return {
+    defaults: DEFAULT_RED_LINES.map((line) => stored.get(line.clauseType) ?? { ...line }),
+    own: own.map((entry): OwnRedLine => {
+      const line = entry as Partial<OwnRedLine> | null;
+      if (
+        !line ||
+        typeof line.id !== "string" ||
+        typeof line.words !== "string" ||
+        line.words.trim() === "" ||
+        !isSeverity(line.severity)
+      ) {
+        throw new StorageError("A stored red line is not in the shape Redline saves.");
+      }
+      return { id: line.id, words: line.words, severity: line.severity };
+    }),
+    leverage,
+  };
 }

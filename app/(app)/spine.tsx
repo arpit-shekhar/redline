@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/try", label: "New document" },
   { href: "/library", label: "Library" },
+  { href: "/red-lines", label: "Red lines" },
 ] as const;
 
 // The spine: the app's navigation, printed on the desk beside the sheets
@@ -37,11 +38,6 @@ export function Spine() {
             </li>
           ),
         )}
-        {/* Red lines are the next part to be built. Until then the spine
-            names them without linking anywhere. */}
-        <li className="text-ink-soft lg:ml-2.5">
-          Red lines <span className="normal-case tracking-normal">(not ready yet)</span>
-        </li>
       </ul>
     </nav>
   );

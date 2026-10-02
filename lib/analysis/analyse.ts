@@ -1,4 +1,4 @@
-import { checkFlags, describeHeldBack } from "./check-flags.ts";
+import { checkFlags, describeHeldBack, rankFlags, type HeldBack } from "./check-flags.ts";
 import { isTooLong, MAX_DOCUMENT_CHARACTERS } from "./limits.ts";
 import {
   MODEL_TIMEOUT_MS,
@@ -10,6 +10,7 @@ import {
   DOCUMENT_TYPES,
   type AnalyseInput,
   type AnalysisOutcome,
+  type Flag,
   type RedLine,
 } from "./types.ts";
 
@@ -59,6 +60,17 @@ const serverLog: Log = (message) => console.warn(`[redline] ${message}`);
 // the flags. Every flag is checked against the document text before the
 // analysis is returned; see check-flags.ts.
 //
+// The red lines decide what is looked for. A switched-off red line is not
+// asked about, is left out of the checked-for list, and a flag of its type
+// is not shown even if the model sends one. A red line's severity is where
+// its flags start: the model may move a flag from must-change down to
+// worth-raising, but a flag can never end up above its red line's severity.
+// That keeps must-change for near-certain flags (ADR 0003) and sends
+// generous flagging to worth-raising (ADR 0004).
+//
+// The reader's leverage is accepted and not used yet. Counter-offers, which
+// it tones, come in ticket 07.
+//
 // The outcome is all or nothing. If either request fails, takes longer than
 // `timeoutMs`, or sends a reply that cannot be read, the outcome is "failed"
 // and nothing from the run is returned, not even the summary.
@@ -73,7 +85,7 @@ export async function analyse(
       `The document has ${input.text.length} characters; the limit is ${MAX_DOCUMENT_CHARACTERS}.`,
     );
   }
-  const redLines = input.redLines.filter((line) => line.enabled);
+  const redLines = switchedOn(input.redLines);
   const checkedFor = redLines.map((line) => line.clauseType);
   if (checkedFor.length === 0) {
     throw new NothingToCheckError(
@@ -101,8 +113,14 @@ export async function analyse(
 
     const summary = readSummary(summaryReply);
     const candidates = readFlagList(flagsReply);
-    const { flags, heldBack } = checkFlags(input.text, candidates, checkedFor);
-    if (heldBack.length > 0) log(describeHeldBack(heldBack));
+    const checked = checkFlags(input.text, candidates, checkedFor);
+    const flags = withinSeverity(checked.flags, redLines);
+    const { heldBack } = checked;
+    if (heldBack.length > 0) log(describeHeldBack(withoutOwnWords(heldBack, redLines)));
+    if (checked.notAskedFor > 0) {
+      const noun = checked.notAskedFor === 1 ? "flag" : "flags";
+      log(`Set aside ${checked.notAskedFor} ${noun} of a clause type that was not asked for.`);
+    }
 
     if (flags.length > 0) {
       return { outcome: "flagged", summary, flags, dropped: heldBack.length, checkedFor };
@@ -117,6 +135,40 @@ export async function analyse(
     log(`Analysis failed. ${reason}`);
     return { outcome: "failed", reason };
   }
+}
+
+// The switched-on red lines, each clause type once. If two red lines name
+// the same clause type, the first one counts.
+function switchedOn(redLines: readonly RedLine[]): RedLine[] {
+  const seen = new Set<string>();
+  return redLines.filter((line) => {
+    if (!line.enabled || seen.has(line.clauseType)) return false;
+    seen.add(line.clauseType);
+    return true;
+  });
+}
+
+// A flag never ends up above the severity its red line starts from. The
+// model may lower a must-change flag; it may not raise a worth-raising one.
+function withinSeverity(flags: readonly Flag[], redLines: readonly RedLine[]): Flag[] {
+  const ceiling = new Map(redLines.map((line) => [line.clauseType, line.severity]));
+  const capped = flags.map((flag) =>
+    ceiling.get(flag.clauseType) === "worth-raising" && flag.severity === "must-change"
+      ? { ...flag, severity: "worth-raising" as const }
+      : flag,
+  );
+  return rankFlags(capped);
+}
+
+// The server log names default clause types, but not the words of a red
+// line the reader wrote. Those are the reader's own, not Redline's.
+function withoutOwnWords(heldBack: readonly HeldBack[], redLines: readonly RedLine[]): HeldBack[] {
+  const own = new Set(redLines.filter((line) => line.ownWords).map((line) => line.clauseType));
+  return heldBack.map((entry) =>
+    entry.clauseType && own.has(entry.clauseType)
+      ? { ...entry, clauseType: "a red line in the reader's own words" }
+      : entry,
+  );
 }
 
 function cleanStatement(checkedFor: readonly string[]): string {
@@ -164,9 +216,18 @@ ${input.text}
 
 function flagsPrompt(input: AnalyseInput, redLines: RedLine[]): string {
   const type = DOCUMENT_TYPES.find((t) => t.value === input.documentType);
-  const list = redLines
-    .map((line) => `- ${line.clauseType} (usually ${line.severity})`)
-    .join("\n");
+  const item = (line: RedLine) => `- ${line.clauseType} (starts at ${line.severity})`;
+  const standard = redLines.filter((line) => !line.ownWords).map(item);
+  const own = redLines.filter((line) => line.ownWords).map(item);
+  const lines = [...standard];
+  if (own.length > 0) {
+    if (standard.length > 0) lines.push("");
+    lines.push(
+      "The person also wrote these red lines in their own words. Each one is a type too: find any clause that crosses it.",
+      ...own,
+    );
+  }
+  const list = lines.join("\n");
   return `This is a ${type?.label.toLowerCase()}.
 
 Find every clause in it that could hurt the person asked to sign it, of these types only:
@@ -175,7 +236,7 @@ ${list}
 For each one, give:
 - clauseType: the type from the list above, written exactly as it appears there.
 - sourceSentence: the one sentence the clause comes from, copied character for character from the document. Keep its spelling mistakes, capitals, punctuation and quote marks as they are. Do not shorten it, join it to another sentence or fix anything in it.
-- severity: "must-change" or "worth-raising". Judge it by how hard the clause is to get out of once signed, without paying or waiting, not by how much money is involved. Use "must-change" only when you are near-certain the clause leaves almost no way out. When in doubt, use "worth-raising". The usual severity for each type is shown above; follow what this clause actually says.
+- severity: "must-change" or "worth-raising". Judge it by how hard the clause is to get out of once signed, without paying or waiting, not by how much money is involved. Each type above shows the severity its flags start from. A type that starts at worth-raising is always "worth-raising". A type that starts at must-change stays "must-change" only when you are near-certain this clause leaves almost no way out; when in doubt, use "worth-raising".
 - textClaim: what the sentence says, stated plainly. No hedging: do not use might, possibly, perhaps, probably, likely or maybe.
 - outcomeClaim: what the clause might do to the person. It depends on facts the document does not contain, so it must say may, might or could.
 - escapabilityReasoning: why it gets that severity, in terms of how hard it is to get out of.

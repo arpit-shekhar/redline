@@ -14,20 +14,35 @@ export function isDocumentType(value: unknown): value is DocumentType {
 // Exactly two levels, ranked by how hard a clause is to get out of (ADR 0003).
 export type Severity = "must-change" | "worth-raising";
 
+// One kind of clause the analysis looks for: one of the eight defaults, or a
+// red line the reader wrote in their own words. For their own, the words are
+// the clause type, so a flag it produces is named by those words.
 export type RedLine = {
   clauseType: string;
+  // The severity flags of this type start from. The model may move a flag
+  // down from must-change to worth-raising, never up (see analyse.ts).
   severity: Severity;
   enabled: boolean;
+  // True when the reader wrote this red line themselves.
+  ownWords?: boolean;
 };
 
 // Whether the user can walk away from the deal (ADR 0005).
 export type Leverage = "can-walk-away" | "cannot-walk-away";
 
+export const LEVERAGES: readonly Leverage[] = ["can-walk-away", "cannot-walk-away"];
+
+export function isLeverage(value: unknown): value is Leverage {
+  return LEVERAGES.includes(value as Leverage);
+}
+
 export type AnalyseInput = {
   text: string;
   documentType: DocumentType;
   redLines: RedLine[];
-  leverage: Leverage;
+  // null until the reader has answered the leverage question. Ticket 07
+  // decides how an unanswered question tones a counter-offer.
+  leverage: Leverage | null;
 };
 
 export const SEVERITIES: readonly Severity[] = ["must-change", "worth-raising"];

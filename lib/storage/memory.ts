@@ -1,8 +1,11 @@
 import { randomUUID } from "node:crypto";
+import type { RedLineSettings } from "../analysis/red-lines.ts";
 import {
   entryFor,
+  readRedLineSettings,
   type DocumentStore,
   type NewDocument,
+  type RedLineStore,
   type SavedDocument,
   type Storage,
 } from "./types.ts";
@@ -50,7 +53,23 @@ export function createMemoryStorage(): Storage {
     },
   };
 
-  return { documents };
+  // One set of red lines per user, by user id.
+  const redLineRows = new Map<string, RedLineSettings>();
+
+  const redLines: RedLineStore = {
+    async get(userId: string) {
+      const row = redLineRows.get(userId);
+      // Read back the same way the database's rows are, so both stores give
+      // the same answer for the same saved settings.
+      return row ? readRedLineSettings(copy(row.defaults), copy(row.own), row.leverage) : null;
+    },
+
+    async save(userId: string, settings: RedLineSettings) {
+      redLineRows.set(userId, copy(settings));
+    },
+  };
+
+  return { documents, redLines };
 }
 
 // Copies go in and out, so a caller changing an object it holds cannot change

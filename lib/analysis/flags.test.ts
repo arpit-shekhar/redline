@@ -285,12 +285,15 @@ test("letter case and punctuation are not forgiven", async () => {
   }
 });
 
-test("a flag of a clause type that was not asked for is held back", async () => {
+// A type nobody asked for is set aside, not held back: the reader did not
+// ask Redline to look for it, so it is not something Redline failed to show.
+test("a flag of a clause type that was not asked for is not shown and not counted", async () => {
   const analysis = await analyseWith(
     withChange(RENEWAL, () => ({ clauseType: "Hidden fees" })),
   );
-  assert.equal(analysis.dropped, 1);
+  assert.equal(analysis.dropped, 0);
   assert.equal(analysis.flags.length, planted.length - 1);
+  assert.ok(!analysis.flags.some((f) => f.clauseType === "Hidden fees"));
 });
 
 test("only switched-on red lines are looked for", async () => {
@@ -304,9 +307,10 @@ test("only switched-on red lines are looked for", async () => {
   const asked = JSON.stringify(request.shape.schema);
   assert.ok(!asked.includes(RENEWAL));
   assert.ok(asked.includes(GUARANTEE));
-  // The stub still sends a renewal flag; it is not shown.
+  // The stub still sends a renewal flag; it is not shown, and not counted
+  // as held back.
   assert.ok(!analysis.flags.some((f) => f.clauseType === RENEWAL));
-  assert.equal(analysis.dropped, 1);
+  assert.equal(analysis.dropped, 0);
 });
 
 test("the eight default red lines are what a first analysis looks for", async () => {

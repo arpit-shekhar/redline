@@ -10,6 +10,11 @@ import {
 // for word, or when it breaks the rule that its outcome claim is marked
 // uncertain and its text claim is not. Held-back flags are counted, never
 // shown.
+//
+// A flag of a clause type that was not asked for is set aside separately: it
+// is a type the reader switched off, or one the model made up. It is not
+// shown, and it is not counted as held back, because the reader did not ask
+// Redline to look for it.
 
 // ---------------------------------------------------------------------------
 // Finding a source sentence in the document
@@ -115,7 +120,6 @@ export function isHedged(claim: string): boolean {
 export type HeldBack = {
   reason:
     | "unreadable"
-    | "clause type not asked for"
     | "text claim hedged"
     | "outcome claim not marked uncertain"
     | "source sentence not found";
@@ -124,7 +128,12 @@ export type HeldBack = {
   clauseType?: string;
 };
 
-export type CheckedFlags = { flags: Flag[]; heldBack: HeldBack[] };
+export type CheckedFlags = {
+  flags: Flag[];
+  heldBack: HeldBack[];
+  // How many flags named a clause type that was not asked for.
+  notAskedFor: number;
+};
 
 const FIELDS = [
   "clauseType",
@@ -146,6 +155,7 @@ export function checkFlags(
   const asked = new Set(clauseTypes);
   const flags: Flag[] = [];
   const heldBack: HeldBack[] = [];
+  let notAskedFor = 0;
   const seen = new Set<string>();
 
   for (const candidate of candidates) {
@@ -155,7 +165,7 @@ export function checkFlags(
       continue;
     }
     if (!asked.has(fields.clauseType)) {
-      heldBack.push({ reason: "clause type not asked for" });
+      notAskedFor++;
       continue;
     }
     const { clauseType } = fields;
@@ -190,7 +200,7 @@ export function checkFlags(
     });
   }
 
-  return { flags: rankFlags(flags), heldBack };
+  return { flags: rankFlags(flags), heldBack, notAskedFor };
 }
 
 // The six text fields, trimmed, or null if any is missing or blank.

@@ -3,11 +3,11 @@ import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { chooseStorage } from "./choose.ts";
 import { createSupabaseStorage } from "./supabase.ts";
-import type { DocumentStore } from "./types.ts";
+import type { DocumentStore, RedLineStore } from "./types.ts";
 
-// The signed-in person's library for this request, for pages and server
-// actions. Pages see only the outcome below and the DocumentStore interface,
-// never which storage is behind it.
+// The signed-in person's library and red lines for this request, for pages
+// and server actions. Pages see only the outcome below and the storage
+// interfaces, never which storage is behind them.
 export type Library =
   // Supabase is not set up on this copy of Redline.
   | { status: "no-storage" }
@@ -15,7 +15,7 @@ export type Library =
   | { status: "signed-out" }
   // Redline could not reach the sign-in service to check who is asking.
   | { status: "unreachable" }
-  | { status: "ready"; userId: string; documents: DocumentStore };
+  | { status: "ready"; userId: string; documents: DocumentStore; redLines: RedLineStore };
 
 export async function openLibrary(): Promise<Library> {
   // Read first, and outside the try below. Reading cookies marks the page as
@@ -66,10 +66,12 @@ async function signedInLibrary(
   // is not trusted.
   const { data, error } = await client.auth.getUser();
   if (data.user) {
+    const storage = createSupabaseStorage(client);
     return {
       status: "ready",
       userId: data.user.id,
-      documents: createSupabaseStorage(client).documents,
+      documents: storage.documents,
+      redLines: storage.redLines,
     };
   }
   if (error && isAuthRetryableFetchError(error)) return { status: "unreachable" };

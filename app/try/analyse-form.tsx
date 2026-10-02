@@ -289,6 +289,12 @@ export function AnalyseForm({
           {state.status === "done" && (
             <>
               <LibraryLine note={state.library} />
+              {state.redLines === "unreachable" && (
+                <p className="mb-8 max-w-[65ch] border-b border-rule pb-4 text-sm leading-relaxed text-ink-soft">
+                  Redline could not load your red lines just now, so it looked for the
+                  eight it starts with.
+                </p>
+              )}
               <ResultSummary text={state.text} result={state.result} />
             </>
           )}
