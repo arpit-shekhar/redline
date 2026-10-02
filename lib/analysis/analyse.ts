@@ -1,4 +1,5 @@
 import { checkFlags, describeHeldBack } from "./check-flags.ts";
+import { isTooLong, MAX_DOCUMENT_CHARACTERS } from "./limits.ts";
 import {
   MODEL_TIMEOUT_MS,
   openRouterClient,
@@ -27,6 +28,12 @@ export class AnalysisTimedOutError extends Error {
 // would claim the document was checked when it was not (ADR 0004).
 export class NothingToCheckError extends Error {
   name = "NothingToCheckError";
+}
+
+// The document is longer than MAX_DOCUMENT_CHARACTERS. Analyse refuses
+// before calling the model, whether the text was pasted or read from a file.
+export class DocumentTooLongError extends Error {
+  name = "DocumentTooLongError";
 }
 
 const SYSTEM = `You read documents for someone who has been asked to sign them and has no legal training.
@@ -61,6 +68,11 @@ export async function analyse(
   log: Log = serverLog,
   timeoutMs: number = MODEL_TIMEOUT_MS,
 ): Promise<AnalysisOutcome> {
+  if (isTooLong(input.text)) {
+    throw new DocumentTooLongError(
+      `The document has ${input.text.length} characters; the limit is ${MAX_DOCUMENT_CHARACTERS}.`,
+    );
+  }
   const redLines = input.redLines.filter((line) => line.enabled);
   const checkedFor = redLines.map((line) => line.clauseType);
   if (checkedFor.length === 0) {

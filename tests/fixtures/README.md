@@ -15,6 +15,13 @@ up, and none of the text comes from a real person's contract.
   none of the eight clause types in a harmful form, so the analysis should
   return a clean result.
 - `clean-document.flags.json`: its answer key, with no planted clauses.
+- `adhesion-contract.pdf` and `adhesion-contract.docx`: the same contract as a
+  PDF and as a Word file, for the text extraction tests. They are made from
+  `adhesion-contract.txt` by `make-upload-files.ts`, which uses no library:
+  run `node tests/fixtures/make-upload-files.ts` after changing the text. A
+  test fails if the files kept here no longer match a fresh build.
+- `scanned-page.pdf` and `empty.docx`: files with no text in them, standing
+  in for scans. Made by the same script.
 - `.gitattributes`: stops git from changing line endings in these files. One
   planted sentence runs across a line break, and the answer key records that
   break exactly.

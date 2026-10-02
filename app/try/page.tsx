@@ -21,7 +21,7 @@ export default function Try() {
             </header>
             <div className="mb-10 mt-10 flex flex-col gap-3">
               <h1 className="tab-type text-[clamp(1.9rem,1.5rem+1.6vw,2.75rem)] leading-none text-ink">
-                Paste the document
+                Paste or drop in the document
               </h1>
               <p className="max-w-[60ch] text-lg leading-relaxed text-ink">
                 A contract, lease, freelance agreement or terms of service you have

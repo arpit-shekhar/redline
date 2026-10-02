@@ -1,6 +1,7 @@
 "use server";
 
 import { analyse } from "@/lib/analysis/analyse.ts";
+import { isTooLong, tooLongMessage } from "@/lib/analysis/limits.ts";
 import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "@/lib/analysis/red-lines.ts";
 import {
   isDocumentType,
@@ -10,7 +11,8 @@ import {
 
 export type AnalyseState =
   | { status: "idle" }
-  // The form was not filled in. Nothing was sent to the model.
+  // The form was not filled in, or the document is over the length limit.
+  // Nothing was sent to the model.
   | { status: "invalid"; message: string }
   | {
       status: "done";
@@ -38,7 +40,11 @@ export async function analyseDocument(
     return { status: "invalid", message: "Choose what kind of document this is." };
   }
   if (text === "") {
-    return { status: "invalid", message: "Paste the document's text first." };
+    return { status: "invalid", message: "Paste the document's text or choose a file first." };
+  }
+  // The page checks this before sending, but the server does not rely on it.
+  if (isTooLong(text)) {
+    return { status: "invalid", message: tooLongMessage(text) };
   }
 
   try {
