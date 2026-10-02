@@ -4,6 +4,9 @@
 // that passed the checks, and how many were held back. It costs a real model
 // call. It never falls back to a stub.
 //
+// It saves the analysis to an in-memory library and checks it comes back
+// unchanged.
+//
 // It then asks the test document's questions (from its answer key) through
 // the real Answer and prints each outcome with its passage.
 //
@@ -14,6 +17,7 @@ import { readFileSync } from "node:fs";
 import { analyse } from "../lib/analysis/analyse.ts";
 import { answer } from "../lib/analysis/answer.ts";
 import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "../lib/analysis/red-lines.ts";
+import { createMemoryStorage } from "../lib/storage/memory.ts";
 
 const repo = new URL("../", import.meta.url);
 
@@ -85,6 +89,26 @@ try {
     console.log(
       `\nEvery flag failed the checks. Held back: ${result.withheld}. This is not a clean result.`,
     );
+  }
+
+  // The library round trip, on the in-memory storage: save the analysis,
+  // open it again, and check nothing changed on the way.
+  if (result.outcome !== "failed") {
+    const { documents } = createMemoryStorage();
+    const owner = "smoke-check";
+    const id = await documents.save(owner, {
+      documentType: fixture === "clean-document" ? "freelance-agreement" : "contract",
+      text,
+      analysis: result,
+      analysedAt: new Date(),
+    });
+    const back = await documents.get(owner, id);
+    const same =
+      back !== null &&
+      back.text === text &&
+      JSON.stringify(back.analysis) === JSON.stringify(result);
+    console.log(`\nSaved to an in-memory library and opened again unchanged: ${same ? "yes" : "no"}`);
+    if (!same) process.exitCode = 1;
   }
 
   const sidecar = JSON.parse(

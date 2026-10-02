@@ -11,10 +11,9 @@ import {
 import { isTooLong, tooLongMessage } from "@/lib/analysis/limits.ts";
 import { DOCUMENT_TYPES } from "@/lib/analysis/types.ts";
 import type { Extraction } from "@/lib/extraction/extract.ts";
-import { analyseDocument, type AnalyseState } from "./actions.ts";
-import { CleanDocument } from "./clean-document.tsx";
-import { FlaggedDocument } from "./flagged-document.tsx";
-import { StandaloneQuestionBox } from "./question-box.tsx";
+import Link from "next/link";
+import { analyseDocument, type AnalyseState, type LibraryNote } from "./actions.ts";
+import { ResultDocument, ResultSummary } from "./result-view.tsx";
 
 const initialState: AnalyseState = { status: "idle" };
 
@@ -65,9 +64,18 @@ function noticeFor(extraction: Extraction, fileName: string): FileNotice {
 // button. A file is read here in the browser and its text put in the box.
 // The file itself is never sent: the form sends only the document type and
 // the text, the same way for pasted and uploaded documents.
-export function AnalyseForm({ intro }: { intro: ReactNode }) {
+//
+// `savesToLibrary` says whether a finished analysis will be kept in the
+// reader's library, so the note under the box says truthfully what happens
+// to the text.
+export function AnalyseForm({
+  intro,
+  savesToLibrary,
+}: {
+  intro: ReactNode;
+  savesToLibrary: boolean;
+}) {
   const [state, submit, pending] = useActionState(analyseDocument, initialState);
-  const result = state.status === "done" ? state.result : undefined;
   const [text, setText] = useState("");
   const [fileNotice, setFileNotice] = useState<FileNotice | null>(null);
   const [readingFile, setReadingFile] = useState(false);
@@ -160,8 +168,10 @@ export function AnalyseForm({ intro }: { intro: ReactNode }) {
             <p id="text-note" className="max-w-[65ch] text-sm text-ink-soft">
               Paste the text, or drop a PDF or Word file onto the box. Your browser reads
               the file, and it is never uploaded. Redline takes only the text from it and
-              discards the file. The text is sent to an AI model to be read. Redline does
-              not save it.
+              discards the file. The text is sent to an AI model to be read.{" "}
+              {savesToLibrary
+                ? "You are signed in, so Redline saves the text and its analysis to your library. You can delete them there."
+                : "Redline does not save it."}
             </p>
             <div
               className="relative"
@@ -276,45 +286,47 @@ export function AnalyseForm({ intro }: { intro: ReactNode }) {
               </button>
             </div>
           )}
-          {result && (
+          {state.status === "done" && (
             <>
-              <h2 className="tab-type mb-4 text-xl text-ink">What this document does</h2>
-              <div className="flex max-w-[65ch] flex-col gap-4 text-lg leading-relaxed text-ink">
-                {result.summary.split(/\n\s*\n/).map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-                ))}
-              </div>
+              <LibraryLine note={state.library} />
+              <ResultSummary text={state.text} result={state.result} />
             </>
-          )}
-          {result?.outcome === "withheld" && (
-            <p className="mt-8 max-w-[65ch] border-t border-rule pt-4 text-base leading-relaxed text-ink">
-              Redline held back {result.withheld} {result.withheld === 1 ? "flag" : "flags"}{" "}
-              because it could not check {result.withheld === 1 ? "it" : "them"} against
-              your document, so it cannot call this document clean.
-            </p>
-          )}
-          {state.status === "done" && state.result.outcome === "withheld" && (
-            <div className="mt-8 max-w-[65ch] border-t border-rule pt-6">
-              <StandaloneQuestionBox text={state.text} />
-            </div>
           )}
         </section>
       </div>
 
-      {state.status === "done" && state.result.outcome === "flagged" && (
-        <FlaggedDocument
-          text={state.text}
-          flags={state.result.flags}
-          dropped={state.result.dropped}
-        />
-      )}
-      {state.status === "done" && state.result.outcome === "clean" && (
-        <CleanDocument
-          text={state.text}
-          statement={state.result.statement}
-          checkedFor={state.result.checkedFor}
-        />
-      )}
+      {state.status === "done" && <ResultDocument text={state.text} result={state.result} />}
     </>
+  );
+}
+
+// One plain line saying whether the analysis was kept in the library.
+function LibraryLine({ note }: { note: LibraryNote }) {
+  const line = "mb-8 max-w-[65ch] border-b border-rule pb-4 text-sm leading-relaxed text-ink-soft";
+  if (note.status === "saved") {
+    return (
+      <p className={line}>
+        Saved to your library.{" "}
+        <Link href={`/library/${note.id}`} className="font-medium text-pen underline">
+          Open it there
+        </Link>
+      </p>
+    );
+  }
+  if (note.status === "failed") {
+    return (
+      <p className={line}>
+        Redline could not save this to your library. It is only on this page.
+      </p>
+    );
+  }
+  return (
+    <p className={line}>
+      Nothing here was saved. If you sign in, Redline keeps the documents you check in{" "}
+      <Link href="/library" className="font-medium text-pen underline">
+        your library
+      </Link>
+      .
+    </p>
   );
 }
