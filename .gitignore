@@ -84,6 +84,10 @@ test-results/
 blob-report/
 .playwright/
 
+# Quality eval output (npm run evals). The judgement sheet quotes flagged
+# sentences, which may come from the private review set.
+evals/results/
+
 # --- Caches ---------------------------------------------------
 .cache/
 .parcel-cache/

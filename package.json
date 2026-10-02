@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test \"lib/**/*.test.ts\" \"tests/**/*.test.ts\"",
+    "test": "node --test \"lib/**/*.test.ts\" \"tests/**/*.test.ts\" \"evals/**/*.test.ts\"",
     "smoke": "node scripts/smoke.ts",
+    "evals": "node evals/run.ts",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

@@ -122,7 +122,7 @@ export async function analyse(
     const checked = checkFlags(input.text, candidates, checkedFor);
     const flags = withinSeverity(checked.flags, redLines);
     const counterOfferTone = toneFor(input.leverage);
-    const { heldBack } = checked;
+    const { heldBack, beforeChecks } = checked;
     if (heldBack.length > 0) log(describeHeldBack(withoutOwnWords(heldBack, redLines)));
     if (checked.notAskedFor > 0) {
       const noun = checked.notAskedFor === 1 ? "flag" : "flags";
@@ -138,12 +138,19 @@ export async function analyse(
         checkedFor,
         counterOfferTone,
         leverage: input.leverage,
+        beforeChecks,
       };
     }
     if (heldBack.length > 0) {
-      return { outcome: "withheld", summary, withheld: heldBack.length };
+      return { outcome: "withheld", summary, withheld: heldBack.length, beforeChecks };
     }
-    return { outcome: "clean", summary, statement: cleanStatement(checkedFor), checkedFor };
+    return {
+      outcome: "clean",
+      summary,
+      statement: cleanStatement(checkedFor),
+      checkedFor,
+      beforeChecks,
+    };
   } catch (error) {
     const reason =
       error instanceof Error ? `${error.name}: ${error.message}` : "Unknown error.";

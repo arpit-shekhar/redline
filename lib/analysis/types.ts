@@ -70,6 +70,20 @@ export function isSeverity(value: unknown): value is Severity {
 // its last, so `text.slice(start, end)` is the sentence.
 export type SourceLocation = { start: number; end: number };
 
+// What the model sent for one analysis, counted before the checks in
+// check-flags.ts removed anything. The quality evals read it to measure how
+// often the model invents a quote (evals/run.ts). No screen shows it, and it
+// holds no document text.
+export type BeforeChecks = {
+  // Every flag the model sent, whatever shape it was in.
+  sent: number;
+  // How many of those gave no source sentence, or one that is not in the
+  // document word for word. Each flag is tested for this whatever else is
+  // wrong with it, so a flag held back for another reason still counts here
+  // when its quote is also wrong.
+  quoteNotFound: number;
+};
+
 // One clause that could hurt the reader.
 export type Flag = {
   clauseType: string;
@@ -116,6 +130,7 @@ export type FlaggedResult = {
   // say why.
   counterOfferTone: CounterOfferTone;
   leverage: Leverage | null;
+  beforeChecks: BeforeChecks;
 };
 
 // Nothing was flagged and nothing was held back (ADR 0004): the document gets
@@ -127,6 +142,8 @@ export type CleanResult = {
   statement: string;
   // The clause types the analysis looked for and did not find. Never empty.
   checkedFor: string[];
+  // The model may still have sent flags of a type that was not asked for.
+  beforeChecks: BeforeChecks;
 };
 
 // The model sent flags, but every one failed the checks. This is not a clean
@@ -136,6 +153,7 @@ export type WithheldResult = {
   summary: string;
   // How many flags were held back. Always at least one.
   withheld: number;
+  beforeChecks: BeforeChecks;
 };
 
 // The model call failed, took too long, or sent a reply that could not be

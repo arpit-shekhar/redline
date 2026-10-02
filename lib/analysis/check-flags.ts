@@ -1,5 +1,6 @@
 import {
   isSeverity,
+  type BeforeChecks,
   type Flag,
   type Severity,
   type SourceLocation,
@@ -135,6 +136,8 @@ export type CheckedFlags = {
   heldBack: HeldBack[];
   // How many flags named a clause type that was not asked for.
   notAskedFor: number;
+  // What the model sent, counted before any check removed anything.
+  beforeChecks: BeforeChecks;
 };
 
 const FIELDS = [
@@ -158,9 +161,14 @@ export function checkFlags(
   const flags: Flag[] = [];
   const heldBack: HeldBack[] = [];
   let notAskedFor = 0;
+  let quoteNotFound = 0;
   const seen = new Set<string>();
 
   for (const candidate of candidates) {
+    const quote = readText(candidate, "sourceSentence");
+    const location = quote === null ? null : locate(document, quote);
+    if (!location) quoteNotFound++;
+
     const fields = readFields(candidate);
     if (!fields || !isSeverity(fields.severity)) {
       heldBack.push({ reason: "unreadable" });
@@ -184,7 +192,6 @@ export function checkFlags(
       heldBack.push({ reason: "outcome claim not marked uncertain", clauseType });
       continue;
     }
-    const location = locate(document, fields.sourceSentence);
     if (!location) {
       heldBack.push({ reason: "source sentence not found", clauseType });
       continue;
@@ -208,7 +215,12 @@ export function checkFlags(
     });
   }
 
-  return { flags: rankFlags(flags), heldBack, notAskedFor };
+  return {
+    flags: rankFlags(flags),
+    heldBack,
+    notAskedFor,
+    beforeChecks: { sent: candidates.length, quoteNotFound },
+  };
 }
 
 // The six text fields, trimmed, or null if any is missing or blank.
