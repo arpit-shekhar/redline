@@ -1,58 +1,90 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { analyse, AnalysisFailedError } from "./analyse.ts";
 import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "./red-lines.ts";
-import type { Complete } from "./model.ts";
+import { loadFixture } from "../../tests/support/fixtures.ts";
+import { stubModel, summaryFrom } from "../../tests/support/stub-model.ts";
 
-const fixture = (name: string) =>
-  readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
+// Analyse is tested at its edges: a document goes in, an analysis comes out.
+// The model is a stub built from the fixture's answer key, so no key is needed
+// and the live model is never called.
+
+const contract = loadFixture("adhesion-contract");
 
 const input = {
-  text: fixture("freelance-agreement.txt"),
-  documentType: "freelance-agreement" as const,
+  text: contract.text,
+  documentType: contract.sidecar.documentType,
   redLines: DEFAULT_RED_LINES,
   leverage: DEFAULT_LEVERAGE,
 };
 
-// Tests run against saved model replies and never call the live model.
-const replyWith =
-  (reply: string): Complete =>
-  async () =>
-    reply;
-
-// This reply was written by hand, not recorded from the model, because no
-// OpenRouter key existed when it was made. Replace it with a recorded one.
 test("returns the summary from the model's reply", async () => {
-  const analysis = await analyse(
-    input,
-    replyWith(fixture("freelance-agreement.summary-reply.txt")),
-  );
+  const analysis = await analyse(input, stubModel(contract.sidecar));
 
-  assert.match(analysis.summary, /^You agree to design a logo/);
-  assert.match(analysis.summary, /even if it has not paid you/);
+  assert.equal(analysis.summary, summaryFrom(contract.sidecar));
 });
 
-test("sends the document's text to the model", async () => {
-  let sent = "";
-  await analyse(input, async (request) => {
-    sent = request.prompt;
-    return '{"summary": "A summary."}';
+test("sends the whole document text to the model", async () => {
+  const model = stubModel(contract.sidecar);
+  await analyse(input, model);
+
+  assert.equal(model.requests.length, 1);
+  assert.ok(model.requests[0].prompt.includes(contract.text));
+});
+
+test("asks the model for a reply in a fixed JSON shape", async () => {
+  const model = stubModel(contract.sidecar);
+  await analyse(input, model);
+
+  const { shape } = model.requests[0];
+  assert.equal(typeof shape.name, "string");
+  assert.equal(shape.schema.type, "object");
+});
+
+test("trims space around the summary", async () => {
+  const model = stubModel(contract.sidecar, {
+    builders: { summary: () => ({ summary: "\n  It renews by itself.  \n" }) },
   });
 
-  assert.ok(sent.includes(input.text));
+  const analysis = await analyse(input, model);
+  assert.equal(analysis.summary, "It renews by itself.");
 });
 
 test("fails rather than showing anything when the reply is not JSON", async () => {
   await assert.rejects(
-    analyse(input, replyWith("Here is your summary: it is a contract.")),
+    analyse(
+      input,
+      stubModel(contract.sidecar, { rawReply: "Here is your summary: it is a contract." }),
+    ),
     AnalysisFailedError,
   );
 });
 
 test("fails when the reply has no summary", async () => {
-  await assert.rejects(
-    analyse(input, replyWith('{"summary": "   "}')),
-    AnalysisFailedError,
+  for (const payload of [{}, { summary: "   " }, { summary: 42 }, null, ["a"]]) {
+    await assert.rejects(
+      analyse(input, stubModel(contract.sidecar, { builders: { summary: () => payload } })),
+      AnalysisFailedError,
+      `payload ${JSON.stringify(payload)} should be refused`,
+    );
+  }
+});
+
+test("passes on a failed model call instead of returning a summary", async () => {
+  const failing = {
+    async complete(): Promise<string> {
+      throw new Error("network down");
+    },
+  };
+  await assert.rejects(analyse(input, failing), /network down/);
+});
+
+test("summarises a document with no planted clauses", async () => {
+  const clean = loadFixture("clean-document");
+  const analysis = await analyse(
+    { ...input, text: clean.text, documentType: clean.sidecar.documentType },
+    stubModel(clean.sidecar),
   );
+
+  assert.equal(analysis.summary, summaryFrom(clean.sidecar));
 });
