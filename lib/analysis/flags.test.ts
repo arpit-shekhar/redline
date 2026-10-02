@@ -86,6 +86,7 @@ test("returns a flag for every planted clause, with each part in its own field",
     assert.ok(flag, `missing: ${clause.clauseType}`);
     assert.deepEqual(Object.keys(flag).sort(), [
       "clauseType",
+      "counterOffer",
       "escapabilityReasoning",
       "outcomeClaim",
       "severity",
@@ -262,6 +263,7 @@ test("an invented sentence is held back", async () => {
       textClaim: "You cannot switch to another provider for two years.",
       outcomeClaim: "You could be stuck with Kestrelmoor after you leave.",
       escapabilityReasoning: "It binds you after the agreement ends.",
+      counterOffer: "Would you consider removing this restriction?",
     },
   ]);
 

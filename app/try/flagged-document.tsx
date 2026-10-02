@@ -1,16 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import type { Flag, Severity, SourceLocation } from "@/lib/analysis/types.ts";
+import type {
+  CounterOfferTone,
+  Flag,
+  Leverage,
+  Severity,
+  SourceLocation,
+} from "@/lib/analysis/types.ts";
 import { EDGE_TAB_POSITION, EdgeTabFace } from "../landing/edge-tab.tsx";
 import { FILM_CLASS, SEVERITY_LABEL } from "../landing/severity.ts";
+import { CounterOfferDraft, ToneLine } from "./counter-offer.tsx";
 import { PassageFilm, QuestionBox, scrollToPassage, useQuestions } from "./question-box.tsx";
 
 // The analysed document drawn as the sheet, with a red or yellow tab on its
 // right edge beside each flagged sentence, in rank order. Choosing a tab tints
 // its sentence and opens its note: in the working column to the right on wide
 // screens, and just below the sentence's paragraph on phones. The question box
-// sits under the note in both places.
+// sits under the note in both places. The note ends with the flag's
+// counter-offer, which the reader can edit and copy.
 
 type RankedFlag = Flag & { rank: number };
 
@@ -26,13 +34,34 @@ export function FlaggedDocument({
   text,
   flags,
   dropped,
+  tone,
+  leverage,
 }: {
   text: string;
   flags: Flag[];
   dropped: number;
+  // How the counter-offers were worded, and the leverage answer behind it.
+  // Missing only on a library copy saved before counter-offers existed.
+  tone?: CounterOfferTone;
+  leverage?: Leverage | null;
 }) {
   const ranked: RankedFlag[] = flags.map((flag, index) => ({ ...flag, rank: index + 1 }));
   const [active, setActive] = useState(1);
+  // The reader's edits to each counter-offer, by rank. A flag with no entry
+  // shows Redline's wording. The note is drawn twice (phone and wide
+  // screen), so the edits are kept here for both to share.
+  const [edits, setEdits] = useState<Record<number, string>>({});
+  // A new analysis starts from Redline's wording again.
+  const [editsFor, setEditsFor] = useState(flags);
+  if (editsFor !== flags) {
+    setEditsFor(flags);
+    setEdits({});
+  }
+  const counterOffer = (flag: RankedFlag) => ({
+    tone,
+    draft: edits[flag.rank] ?? flag.counterOffer,
+    onDraftChange: (next: string) => setEdits((all) => ({ ...all, [flag.rank]: next })),
+  });
   const [positions, setPositions] = useState<Positions>({});
   const sheetRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -110,6 +139,9 @@ export function FlaggedDocument({
               why.
             </p>
           )}
+          {flags.length > 0 && tone && (
+            <ToneLine tone={tone} leverage={leverage ?? null} />
+          )}
           {dropped > 0 && (
             <p className="text-base leading-relaxed text-ink">
               Redline held back {dropped} {dropped === 1 ? "flag" : "flags"} it could
@@ -143,7 +175,7 @@ export function FlaggedDocument({
                   </p>
                   {opensHere && (
                     <div className="mt-4 flex flex-col gap-4 lg:hidden">
-                      <FlagNote flag={activeFlag} text={text} />
+                      <FlagNote flag={activeFlag} text={text} {...counterOffer(activeFlag)} />
                       <div className="bg-sheet px-5 pb-5 pt-4 shadow-[var(--sheet-shadow)]">
                         <QuestionBox questions={questions} />
                       </div>
@@ -179,7 +211,7 @@ export function FlaggedDocument({
             }}
           >
             <div aria-live="polite">
-              <FlagNote flag={activeFlag} text={text} />
+              <FlagNote flag={activeFlag} text={text} {...counterOffer(activeFlag)} />
             </div>
             <div className="mt-6 bg-sheet px-5 pb-5 pt-4 shadow-[var(--sheet-shadow)]">
               <QuestionBox questions={questions} />
@@ -324,9 +356,22 @@ const REASON_LABEL: Record<Severity, string> = {
 const CONTEXT = 160;
 
 // The note a tab opens: a second slip of paper holding what the clause says,
-// what it might do, why it has its severity, and the sentence in its place in
-// the document.
-function FlagNote({ flag, text }: { flag: RankedFlag; text: string }) {
+// what it might do, why it has its severity, the sentence in its place in
+// the document, and the counter-offer.
+function FlagNote({
+  flag,
+  text,
+  tone,
+  draft,
+  onDraftChange,
+}: {
+  flag: RankedFlag;
+  text: string;
+  tone: CounterOfferTone | undefined;
+  // The counter-offer as the reader has it now.
+  draft: string;
+  onDraftChange: (draft: string) => void;
+}) {
   const { start, end } = flag.sourceLocation;
   const before = contextBefore(text, start);
   const after = contextAfter(text, end);
@@ -362,6 +407,14 @@ function FlagNote({ flag, text }: { flag: RankedFlag; text: string }) {
           Word for word from your document
         </figcaption>
       </figure>
+      {flag.counterOffer && (
+        <CounterOfferDraft
+          drafted={flag.counterOffer}
+          text={draft}
+          onChange={onDraftChange}
+          tone={tone}
+        />
+      )}
     </div>
   );
 }

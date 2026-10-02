@@ -40,7 +40,15 @@ export function ResultSummary({ text, result }: { text: string; result: Analysis
 // sheet here.
 export function ResultDocument({ text, result }: { text: string; result: AnalysisResult }) {
   if (result.outcome === "flagged") {
-    return <FlaggedDocument text={text} flags={result.flags} dropped={result.dropped} />;
+    return (
+      <FlaggedDocument
+        text={text}
+        flags={result.flags}
+        dropped={result.dropped}
+        tone={result.counterOfferTone}
+        leverage={result.leverage}
+      />
+    );
   }
   if (result.outcome === "clean") {
     return (

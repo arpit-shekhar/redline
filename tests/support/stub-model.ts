@@ -10,8 +10,8 @@ import type { FixtureQuestion, PlantedClause, Sidecar } from "./fixtures.ts";
 // each reply from a fixture's answer key, choosing what to build by the name
 // of the reply shape the request asks for.
 //
-// To support a new kind of request (counter-offers), add a builder
-// to DEFAULT_BUILDERS under that shape's name.
+// To support a new kind of request, add a builder to DEFAULT_BUILDERS under
+// that shape's name. Counter-offers come in the flags reply, one per flag.
 
 export type PayloadBuilder = (sidecar: Sidecar, request: ModelRequest) => unknown;
 
@@ -79,6 +79,7 @@ export type FlagPayload = {
   textClaim: string;
   outcomeClaim: string;
   escapabilityReasoning: string;
+  counterOffer: string;
 };
 
 // A flag payload for one planted clause, quoting its sentence exactly as the
@@ -91,6 +92,7 @@ export function flagFrom(clause: PlantedClause): FlagPayload {
     textClaim: clause.textClaim,
     outcomeClaim: clause.outcomeClaim,
     escapabilityReasoning: clause.escapabilityReasoning,
+    counterOffer: clause.counterOffer,
   };
 }
 

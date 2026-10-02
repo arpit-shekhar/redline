@@ -128,6 +128,7 @@ test("flags invented for a clean document are withheld, not shown as clean", asy
     textClaim: "The agreement renews every year unless you cancel.",
     outcomeClaim: "You could pay for a year you did not want.",
     escapabilityReasoning: "It renews unless you act first.",
+    counterOffer: "Would you consider letting the agreement end each year unless we both agree to renew it?",
   };
   const model = stubModel(clean.sidecar, {
     builders: { [FLAGS_SHAPE_NAME]: () => ({ flags: [invented, invented] }) },

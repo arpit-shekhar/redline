@@ -8,8 +8,10 @@ import {
 import { flagsShape, SUMMARY_SHAPE } from "./reply-shapes.ts";
 import {
   DOCUMENT_TYPES,
+  toneFor,
   type AnalyseInput,
   type AnalysisOutcome,
+  type CounterOfferTone,
   type Flag,
   type RedLine,
 } from "./types.ts";
@@ -68,8 +70,12 @@ const serverLog: Log = (message) => console.warn(`[redline] ${message}`);
 // That keeps must-change for near-certain flags (ADR 0003) and sends
 // generous flagging to worth-raising (ADR 0004).
 //
-// The reader's leverage is accepted and not used yet. Counter-offers, which
-// it tones, come in ticket 07.
+// Each flag carries one counter-offer, drafted in the same request as the
+// flag. The reader's leverage sets its tone (ADR 0005): firm when they can
+// walk away, a request otherwise, including when they have not answered
+// (see toneFor). Only one version is drafted. A flag that comes back without
+// a counter-offer is held back and counted, like any other flag the model
+// sent in a shape Redline cannot use.
 //
 // The outcome is all or nothing. If either request fails, takes longer than
 // `timeoutMs`, or sends a reply that cannot be read, the outcome is "failed"
@@ -104,7 +110,7 @@ export async function analyse(
         }),
         model.complete({
           system: SYSTEM,
-          prompt: flagsPrompt(input, redLines),
+          prompt: flagsPrompt(input, redLines, toneFor(input.leverage)),
           shape: flagsShape(checkedFor),
           signal,
         }),
@@ -115,6 +121,7 @@ export async function analyse(
     const candidates = readFlagList(flagsReply);
     const checked = checkFlags(input.text, candidates, checkedFor);
     const flags = withinSeverity(checked.flags, redLines);
+    const counterOfferTone = toneFor(input.leverage);
     const { heldBack } = checked;
     if (heldBack.length > 0) log(describeHeldBack(withoutOwnWords(heldBack, redLines)));
     if (checked.notAskedFor > 0) {
@@ -123,7 +130,15 @@ export async function analyse(
     }
 
     if (flags.length > 0) {
-      return { outcome: "flagged", summary, flags, dropped: heldBack.length, checkedFor };
+      return {
+        outcome: "flagged",
+        summary,
+        flags,
+        dropped: heldBack.length,
+        checkedFor,
+        counterOfferTone,
+        leverage: input.leverage,
+      };
     }
     if (heldBack.length > 0) {
       return { outcome: "withheld", summary, withheld: heldBack.length };
@@ -214,7 +229,17 @@ ${input.text}
 </document>`;
 }
 
-function flagsPrompt(input: AnalyseInput, redLines: RedLine[]): string {
+// What the model is told about the person's position, for each tone.
+const TONE_INSTRUCTIONS: Record<CounterOfferTone, string> = {
+  firm: `The person can walk away from this deal if the other side will not change the terms. Word every counterOffer firmly, as a condition of signing, for example "I require that..." or "I can sign only if...". Be polite but do not ask permission, apologise or soften it.`,
+  request: `The person cannot afford to lose this deal. Word every counterOffer as a polite request, for example "Would you consider...", never as a demand, an ultimatum or a condition of signing.`,
+};
+
+function flagsPrompt(
+  input: AnalyseInput,
+  redLines: RedLine[],
+  tone: CounterOfferTone,
+): string {
   const type = DOCUMENT_TYPES.find((t) => t.value === input.documentType);
   const item = (line: RedLine) => `- ${line.clauseType} (starts at ${line.severity})`;
   const standard = redLines.filter((line) => !line.ownWords).map(item);
@@ -240,6 +265,9 @@ For each one, give:
 - textClaim: what the sentence says, stated plainly. No hedging: do not use might, possibly, perhaps, probably, likely or maybe.
 - outcomeClaim: what the clause might do to the person. It depends on facts the document does not contain, so it must say may, might or could.
 - escapabilityReasoning: why it gets that severity, in terms of how hard it is to get out of.
+- counterOffer: one counter-offer the person can send to the other side about this clause. Say plainly what should change and give the replacement wording for the clause. Address this clause only. Write one version, in the tone below.
+
+Tone for every counterOffer: ${TONE_INSTRUCTIONS[tone]}
 
 Flag a clause even if you are unsure it will cause harm; put those under "worth-raising". If one sentence holds two of the types, give a flag for each. If nothing in the document matches, return an empty list.
 

@@ -7,9 +7,10 @@ import {
 
 // The check every flag passes before anyone sees it (ADR 0001, ADR 0004).
 // A flag is held back when its source sentence is not in the document word
-// for word, or when it breaks the rule that its outcome claim is marked
-// uncertain and its text claim is not. Held-back flags are counted, never
-// shown.
+// for word, when it breaks the rule that its outcome claim is marked
+// uncertain and its text claim is not, or when it has no counter-offer (a
+// flag without one only explains a loss, so the reply for it is treated as
+// unreadable). Held-back flags are counted, never shown.
 //
 // A flag of a clause type that was not asked for is set aside separately: it
 // is a type the reader switched off, or one the model made up. It is not
@@ -120,6 +121,7 @@ export function isHedged(claim: string): boolean {
 export type HeldBack = {
   reason:
     | "unreadable"
+    | "no counter-offer"
     | "text claim hedged"
     | "outcome claim not marked uncertain"
     | "source sentence not found";
@@ -169,6 +171,11 @@ export function checkFlags(
       continue;
     }
     const { clauseType } = fields;
+    const counterOffer = readText(candidate, "counterOffer");
+    if (counterOffer === null) {
+      heldBack.push({ reason: "no counter-offer", clauseType });
+      continue;
+    }
     if (isHedged(fields.textClaim)) {
       heldBack.push({ reason: "text claim hedged", clauseType });
       continue;
@@ -197,6 +204,7 @@ export function checkFlags(
       textClaim: fields.textClaim,
       outcomeClaim: fields.outcomeClaim,
       escapabilityReasoning: fields.escapabilityReasoning,
+      counterOffer,
     });
   }
 
@@ -207,15 +215,22 @@ export function checkFlags(
 function readFields(
   candidate: unknown,
 ): Record<(typeof FIELDS)[number], string> | null {
-  if (typeof candidate !== "object" || candidate === null) return null;
-  const record = candidate as Record<string, unknown>;
   const fields = {} as Record<(typeof FIELDS)[number], string>;
   for (const name of FIELDS) {
-    const value = record[name];
-    if (typeof value !== "string" || value.trim() === "") return null;
-    fields[name] = value.trim();
+    const value = readText(candidate, name);
+    if (value === null) return null;
+    fields[name] = value;
   }
   return fields;
+}
+
+// One text field of the model's flag, trimmed, or null if it is missing or
+// blank.
+function readText(candidate: unknown, name: string): string | null {
+  if (typeof candidate !== "object" || candidate === null) return null;
+  const value = (candidate as Record<string, unknown>)[name];
+  if (typeof value !== "string" || value.trim() === "") return null;
+  return value.trim();
 }
 
 const SEVERITY_ORDER: Record<Severity, number> = {

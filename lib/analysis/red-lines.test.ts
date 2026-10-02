@@ -76,6 +76,7 @@ function ownFlag(sourceSentence: string, severity = "must-change"): FlagPayload 
     textClaim: "When the agreement renews, the fees change to whatever the list prices are then.",
     outcomeClaim: "You could pay more after renewal than you pay now.",
     escapabilityReasoning: "The new price applies once the renewal starts, and getting out of the renewal is hard.",
+    counterOffer: "Would you consider keeping the fees the same after renewal unless we both agree in writing to change them?",
   };
 }
 
@@ -286,9 +287,10 @@ test("leverage starts unanswered and is passed to Analyse once answered", async 
   assert.equal(DEFAULT_SETTINGS.leverage, null);
   const settings = settled(setLeverage(DEFAULT_SETTINGS, "can-walk-away"));
   assert.equal(settings.leverage, "can-walk-away");
-  // Analyse takes either; it does not use leverage until counter-offers exist.
+  // The answer reaches Analyse, which tones the counter-offers by it.
   const { result } = await analyseContract(settings);
   assert.equal(result.outcome, "flagged");
+  if (result.outcome === "flagged") assert.equal(result.leverage, "can-walk-away");
 });
 
 test("changes never alter the settings they were given", () => {

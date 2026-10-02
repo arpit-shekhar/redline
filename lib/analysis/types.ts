@@ -36,12 +36,26 @@ export function isLeverage(value: unknown): value is Leverage {
   return LEVERAGES.includes(value as Leverage);
 }
 
+// How every counter-offer in one analysis is worded (ADR 0005). "firm"
+// states the change as a condition of signing ("I require"). "request" asks
+// for it ("would you consider"). Only one version is ever drafted.
+export type CounterOfferTone = "firm" | "request";
+
+// The tone a reader's leverage calls for. Someone who can walk away gets
+// firm wording. Anyone else gets requests, including a reader who has not
+// answered the leverage question (everyone signed out): firm wording can
+// cost someone without leverage the deal, and a request costs someone with
+// leverage very little.
+export function toneFor(leverage: Leverage | null): CounterOfferTone {
+  return leverage === "can-walk-away" ? "firm" : "request";
+}
+
 export type AnalyseInput = {
   text: string;
   documentType: DocumentType;
   redLines: RedLine[];
-  // null until the reader has answered the leverage question. Ticket 07
-  // decides how an unanswered question tones a counter-offer.
+  // null until the reader has answered the leverage question. It sets the
+  // tone of every counter-offer; see toneFor.
   leverage: Leverage | null;
 };
 
@@ -56,8 +70,7 @@ export function isSeverity(value: unknown): value is Severity {
 // its last, so `text.slice(start, end)` is the sentence.
 export type SourceLocation = { start: number; end: number };
 
-// One clause that could hurt the reader. The counter-offer is added later
-// (ticket 07).
+// One clause that could hurt the reader.
 export type Flag = {
   clauseType: string;
   severity: Severity;
@@ -72,6 +85,9 @@ export type Flag = {
   outcomeClaim: string;
   // Why it has this severity, judged by how hard the clause is to get out of.
   escapabilityReasoning: string;
+  // Replacement wording for this clause that the reader can send to the
+  // other side, in the tone their leverage calls for. Never empty.
+  counterOffer: string;
 };
 
 // What Analyse returns. Exactly one of four outcomes, so a screen has to say
@@ -95,6 +111,11 @@ export type FlaggedResult = {
   dropped: number;
   // The clause types the analysis looked for. Never empty.
   checkedFor: string[];
+  // The tone every counter-offer was drafted in, and the leverage answer it
+  // came from (null when the reader had not answered), so the screen can
+  // say why.
+  counterOfferTone: CounterOfferTone;
+  leverage: Leverage | null;
 };
 
 // Nothing was flagged and nothing was held back (ADR 0004): the document gets

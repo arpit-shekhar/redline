@@ -271,8 +271,13 @@ function LeverageSheet({ leverage }: { leverage: Leverage | null }) {
       <h2 className="tab-type text-xl text-ink sm:text-2xl">Could you walk away?</h2>
       <p className="mt-3 max-w-[60ch] text-base leading-relaxed text-ink">
         If the other side will not change the terms, could you walk away from deals like the
-        ones you check here? Redline asks once and keeps your answer for every document. Your
-        answer sets how firmly Redline words the changes it drafts for you.
+        ones you check here? Redline asks once and keeps your answer for every document.
+      </p>
+      <p className="mt-3 max-w-[60ch] text-base leading-relaxed text-ink">
+        For each flag, Redline drafts a counter-offer: new wording you can send to the other
+        side. Your answer sets how it is worded. If you can walk away, it is firm, a condition
+        of signing. If you cannot, it is a polite request, so asking does not put the deal at
+        risk. Until you answer, Redline words them as requests.
       </p>
       <p className="mt-3 max-w-[60ch] text-base leading-relaxed text-ink-soft">
         {current

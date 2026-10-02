@@ -1,7 +1,7 @@
 // A live check of the whole analysis path: runs a test document through the
 // real Analyse with the real OpenRouter client and prints what comes back:
 // which outcome (flagged, clean, withheld or failed), the summary, every flag
-// that passed the checks, and how many were held back. It costs a real model
+// that passed the checks with its counter-offer, and how many were held back. It costs a real model
 // call. It never falls back to a stub.
 //
 // It saves the analysis to an in-memory library and checks it comes back
@@ -12,11 +12,16 @@
 //
 // Run with: npm run smoke
 // Or, for the document with nothing planted: npm run smoke -- clean-document
+// Leverage starts unanswered, as for someone signed out. To see the
+// counter-offers worded for an answer, add it after the document name:
+//   npm run smoke -- adhesion-contract can-walk-away
+//   npm run smoke -- adhesion-contract cannot-walk-away
 
 import { readFileSync } from "node:fs";
 import { analyse } from "../lib/analysis/analyse.ts";
 import { answer } from "../lib/analysis/answer.ts";
 import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "../lib/analysis/red-lines.ts";
+import { isLeverage, LEVERAGES } from "../lib/analysis/types.ts";
 import { createMemoryStorage } from "../lib/storage/memory.ts";
 
 const repo = new URL("../", import.meta.url);
@@ -27,6 +32,12 @@ if (!FIXTURES.includes(fixture)) {
   console.error(`Unknown test document "${fixture}". Use one of: ${FIXTURES.join(", ")}.`);
   process.exit(1);
 }
+const leverageArg = process.argv[3];
+if (leverageArg !== undefined && !isLeverage(leverageArg)) {
+  console.error(`Unknown leverage "${leverageArg}". Use one of: ${LEVERAGES.join(", ")}.`);
+  process.exit(1);
+}
+const leverage = leverageArg ?? DEFAULT_LEVERAGE;
 
 // Load .env.local if there is one. Its values are never printed.
 try {
@@ -53,9 +64,10 @@ try {
     text,
     documentType: fixture === "clean-document" ? "freelance-agreement" : "contract",
     redLines: DEFAULT_RED_LINES,
-    leverage: DEFAULT_LEVERAGE,
+    leverage,
   });
   console.log(`Document: ${fixture}`);
+  console.log(`Leverage: ${leverage ?? "not answered"}`);
   console.log(`Outcome: ${result.outcome}\n`);
 
   if (result.outcome === "failed") {
@@ -71,10 +83,12 @@ try {
   }
 
   if (result.outcome === "flagged") {
-    console.log(`\nFlags (${result.flags.length})\n`);
+    console.log(`\nFlags (${result.flags.length})`);
+    console.log(`Counter-offers worded as: ${result.counterOfferTone}\n`);
     result.flags.forEach((flag, index) => {
       console.log(`${index + 1}. ${flag.severity} | ${flag.clauseType}`);
       console.log(`   "${flag.sourceSentence.replace(/\s+/g, " ")}"`);
+      console.log(`   Counter-offer: ${flag.counterOffer.replace(/\s+/g, " ")}\n`);
     });
     console.log(`\nHeld back because they failed the checks: ${result.dropped}`);
   }

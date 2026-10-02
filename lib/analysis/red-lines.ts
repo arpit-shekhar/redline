@@ -35,8 +35,8 @@ export const DEFAULT_RED_LINES: RedLine[] = [
 ];
 
 // Until the reader answers the leverage question, their leverage is not
-// known. Ticket 07 decides what an unanswered question does to the tone of a
-// counter-offer; until then Analyse passes it through unchanged.
+// known, and counter-offers are worded as requests (see toneFor in
+// types.ts).
 export const DEFAULT_LEVERAGE: Leverage | null = null;
 
 // ---------------------------------------------------------------------------

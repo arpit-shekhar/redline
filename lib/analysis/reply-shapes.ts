@@ -65,6 +65,11 @@ export function flagsShape(clauseTypes: readonly string[]): ReplyShape {
                 description:
                   "Why this severity, in terms of how hard the clause is to get out of once signed.",
               },
+              counterOffer: {
+                type: "string",
+                description:
+                  "One drafted counter-offer for this clause: replacement wording the person can send to the other side, in the tone the request asks for.",
+              },
             },
             required: [
               "clauseType",
@@ -73,6 +78,7 @@ export function flagsShape(clauseTypes: readonly string[]): ReplyShape {
               "textClaim",
               "outcomeClaim",
               "escapabilityReasoning",
+              "counterOffer",
             ],
             additionalProperties: false,
           },
