@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import type { Flag, Severity } from "@/lib/analysis/types.ts";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import type { Flag, Severity, SourceLocation } from "@/lib/analysis/types.ts";
 import { EDGE_TAB_POSITION, EdgeTabFace } from "../landing/edge-tab.tsx";
 import { FILM_CLASS, SEVERITY_LABEL } from "../landing/severity.ts";
+import { PassageFilm, QuestionBox, scrollToPassage, useQuestions } from "./question-box.tsx";
 
 // The analysed document drawn as the sheet, with a red or yellow tab on its
 // right edge beside each flagged sentence, in rank order. Choosing a tab tints
 // its sentence and opens its note: in the working column to the right on wide
-// screens, and just below the sentence's paragraph on phones.
+// screens, and just below the sentence's paragraph on phones. The question box
+// sits under the note in both places.
 
 type RankedFlag = Flag & { rank: number };
 
@@ -34,6 +36,12 @@ export function FlaggedDocument({
   const [positions, setPositions] = useState<Positions>({});
   const sheetRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const questions = useQuestions(text);
+  const { scrollRequest } = questions;
+
+  useEffect(() => {
+    if (scrollRequest > 0) scrollToPassage(bodyRef.current);
+  }, [scrollRequest]);
 
   const measure = useCallback(() => {
     const sheet = sheetRef.current;
@@ -123,11 +131,22 @@ export function FlaggedDocument({
               return (
                 <div key={start}>
                   <p className="max-w-[62ch] whitespace-pre-wrap break-words">
-                    {markedText(text, start, end, ranked, activeFlag?.rank, setActive)}
+                    {markedText(
+                      text,
+                      start,
+                      end,
+                      ranked,
+                      activeFlag?.rank,
+                      setActive,
+                      questions.shownPassage,
+                    )}
                   </p>
                   {opensHere && (
-                    <div className="mt-4 lg:hidden">
+                    <div className="mt-4 flex flex-col gap-4 lg:hidden">
                       <FlagNote flag={activeFlag} text={text} />
+                      <div className="bg-sheet px-5 pb-5 pt-4 shadow-[var(--sheet-shadow)]">
+                        <QuestionBox questions={questions} />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -148,16 +167,23 @@ export function FlaggedDocument({
       </article>
 
       {activeFlag && (
-        <aside aria-label="The open flag" className="relative hidden pl-[6.75rem] lg:block">
+        <aside
+          aria-label="The open flag and your questions"
+          className="relative hidden pl-[6.75rem] lg:block"
+        >
           <div
-            aria-live="polite"
-            className="note-follow absolute left-[6.75rem] right-0 top-0"
+            className="note-follow absolute left-[6.75rem] right-0 top-0 pb-8"
             style={{
               transform: `translateY(${noteTop === undefined ? 0 : Math.max(0, noteTop - 22)}px)`,
               visibility: noteTop === undefined ? "hidden" : "visible",
             }}
           >
-            <FlagNote flag={activeFlag} text={text} />
+            <div aria-live="polite">
+              <FlagNote flag={activeFlag} text={text} />
+            </div>
+            <div className="mt-6 bg-sheet px-5 pb-5 pt-4 shadow-[var(--sheet-shadow)]">
+              <QuestionBox questions={questions} />
+            </div>
           </div>
         </aside>
       )}
@@ -181,7 +207,8 @@ export function paragraphsOf(text: string): [number, number][] {
 
 // One paragraph's text, with every flagged stretch tinted. Where two flags
 // share text, the chosen one's colour shows, and tapping the text again moves
-// on to the next flag there.
+// on to the next flag there. The passage of the answer chosen in the question
+// box, if any, is tinted grey.
 function markedText(
   text: string,
   start: number,
@@ -189,9 +216,12 @@ function markedText(
   flags: RankedFlag[],
   active: number | undefined,
   onSelect: (rank: number) => void,
+  passage: SourceLocation | null,
 ): ReactNode[] {
   const cuts = new Set([start, end]);
-  for (const { sourceLocation: at } of flags) {
+  const bounds = flags.map((f) => f.sourceLocation);
+  if (passage) bounds.push(passage);
+  for (const at of bounds) {
     if (at.start > start && at.start < end) cuts.add(at.start);
     if (at.end > start && at.end < end) cuts.add(at.end);
   }
@@ -200,31 +230,51 @@ function markedText(
   const pieces: ReactNode[] = [];
   for (let i = 0; i < points.length - 1; i++) {
     const [from, to] = [points[i], points[i + 1]];
-    const piece = text.slice(from, to);
-    const covering = flags.filter(
-      (f) => f.sourceLocation.start < to && f.sourceLocation.end > from,
-    );
-    if (covering.length === 0) {
-      pieces.push(piece);
-      continue;
-    }
-    const chosenHere = covering.findIndex((f) => f.rank === active);
-    const shown = chosenHere === -1 ? covering[0] : covering[chosenHere];
-    const next = covering[(chosenHere + 1) % covering.length];
-    const startsHere = covering.filter((f) => f.sourceLocation.start === from);
+    const piece = flaggedPiece(text, from, to, flags, active, onSelect);
+    const inPassage = passage && passage.start < to && passage.end > from;
     pieces.push(
-      <mark
-        key={from}
-        data-starts={startsHere.length > 0 ? startsHere.map((f) => f.rank).join(" ") : undefined}
-        data-active={chosenHere !== -1}
-        onClick={() => onSelect(next.rank)}
-        className={`${FILM_CLASS[shown.severity]} cursor-pointer rounded-[2px] px-0.5 text-ink`}
-      >
-        {piece}
-      </mark>,
+      inPassage ? (
+        <PassageFilm key={`passage-${from}`} startsHere={from === passage.start}>
+          {piece}
+        </PassageFilm>
+      ) : (
+        piece
+      ),
     );
   }
   return pieces;
+}
+
+// One stretch of text between two cut points: plain, or tinted by the flags
+// that cover it.
+function flaggedPiece(
+  text: string,
+  from: number,
+  to: number,
+  flags: RankedFlag[],
+  active: number | undefined,
+  onSelect: (rank: number) => void,
+): ReactNode {
+  const piece = text.slice(from, to);
+  const covering = flags.filter(
+    (f) => f.sourceLocation.start < to && f.sourceLocation.end > from,
+  );
+  if (covering.length === 0) return piece;
+  const chosenHere = covering.findIndex((f) => f.rank === active);
+  const shown = chosenHere === -1 ? covering[0] : covering[chosenHere];
+  const next = covering[(chosenHere + 1) % covering.length];
+  const startsHere = covering.filter((f) => f.sourceLocation.start === from);
+  return (
+    <mark
+      key={from}
+      data-starts={startsHere.length > 0 ? startsHere.map((f) => f.rank).join(" ") : undefined}
+      data-active={chosenHere !== -1}
+      onClick={() => onSelect(next.rank)}
+      className={`${FILM_CLASS[shown.severity]} cursor-pointer rounded-[2px] px-0.5 text-ink`}
+    >
+      {piece}
+    </mark>
+  );
 }
 
 function TabButton({

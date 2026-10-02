@@ -109,3 +109,49 @@ export type FailedAnalysis = {
   // For the server log only: what went wrong, never any document text.
   reason: string;
 };
+
+// What Answer returns for one question about a document. Exactly one of five
+// outcomes. Only "answered" carries text from the model; every refusal is a
+// fixed statement written by Redline.
+export type AnswerOutcome =
+  | AnsweredQuestion
+  | NotAddressed
+  | LegalityRefused
+  | UnverifiedAnswer
+  | FailedAnswer;
+
+// An answer Answer finished with. Failure is the one outcome left out.
+export type AnswerResult = Exclude<AnswerOutcome, FailedAnswer>;
+
+// The document answers the question, and the passage the answer comes from
+// was found in it word for word.
+export type AnsweredQuestion = {
+  outcome: "answered";
+  // The model's answer, in plain English.
+  answer: string;
+  // Copied from the document itself, not from the model's quote, so it is
+  // always exactly what the document says.
+  passage: string;
+  // Worked out by the word-for-word check, never taken from the model.
+  passageLocation: SourceLocation;
+};
+
+// The document does not address the question. No answer text, so nothing
+// from general knowledge can reach the reader.
+export type NotAddressed = { outcome: "not-addressed"; statement: string };
+
+// The question asks whether something is legal or enforceable. The document
+// alone cannot answer that, and Redline is not legal advice.
+export type LegalityRefused = { outcome: "legality"; statement: string };
+
+// The model gave an answer, but its passage was not in the document word for
+// word. The answer is withheld and the reader is told so.
+export type UnverifiedAnswer = { outcome: "unverified"; statement: string };
+
+// The model call failed, took too long, or sent a reply that could not be
+// read. Nothing from it is shown.
+export type FailedAnswer = {
+  outcome: "failed";
+  // For the server log only: what went wrong, never any document text.
+  reason: string;
+};

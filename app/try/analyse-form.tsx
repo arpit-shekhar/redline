@@ -14,6 +14,7 @@ import type { Extraction } from "@/lib/extraction/extract.ts";
 import { analyseDocument, type AnalyseState } from "./actions.ts";
 import { CleanDocument } from "./clean-document.tsx";
 import { FlaggedDocument } from "./flagged-document.tsx";
+import { StandaloneQuestionBox } from "./question-box.tsx";
 
 const initialState: AnalyseState = { status: "idle" };
 
@@ -291,6 +292,11 @@ export function AnalyseForm({ intro }: { intro: ReactNode }) {
               because it could not check {result.withheld === 1 ? "it" : "them"} against
               your document, so it cannot call this document clean.
             </p>
+          )}
+          {state.status === "done" && state.result.outcome === "withheld" && (
+            <div className="mt-8 max-w-[65ch] border-t border-rule pt-6">
+              <StandaloneQuestionBox text={state.text} />
+            </div>
           )}
         </section>
       </div>

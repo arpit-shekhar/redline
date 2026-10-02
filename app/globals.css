@@ -25,6 +25,10 @@
   --film-red-strong: rgb(205 8 0 / 0.2);
   --film-yellow: rgb(244 194 27 / 0.3);
   --film-yellow-strong: rgb(244 194 27 / 0.58);
+  /* The tint behind an answer's passage. Grey, because an answer has no
+     severity and red and yellow always mean one. */
+  --film-grey: rgb(80 84 90 / 0.1);
+  --film-grey-strong: rgb(80 84 90 / 0.2);
   --pen: #1f3a93;
   --tab-shadow: 0 1px 1px rgb(27 27 26 / 0.12), 0 3px 8px rgb(27 27 26 / 0.12);
   --sheet-shadow: 0 1px 2px rgb(27 27 26 / 0.08), 0 12px 32px rgb(27 27 26 / 0.1);
@@ -137,6 +141,18 @@ select {
   background: var(--film-yellow-strong);
 }
 
+/* An answer's passage, tinted on the sheet while its answer is chosen. */
+.film-passage {
+  background: var(--film-grey);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-color 180ms var(--ease-out-quart);
+}
+
+.film-passage[data-active="true"] {
+  background: var(--film-grey-strong);
+}
+
 /* Tabs are stuck on one at a time, in rank order, once per page load. They
    are visible by default; only the entrance is animated. */
 @keyframes tab-stick {
@@ -164,7 +180,8 @@ select {
     transition: none;
   }
   .film-must-change,
-  .film-worth-raising {
+  .film-worth-raising,
+  .film-passage {
     transition: none;
   }
 }

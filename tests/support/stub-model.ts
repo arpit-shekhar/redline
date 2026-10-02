@@ -1,12 +1,16 @@
 import type { ModelClient, ModelRequest } from "../../lib/analysis/model.ts";
-import { FLAGS_SHAPE_NAME, SUMMARY_SHAPE } from "../../lib/analysis/reply-shapes.ts";
-import type { PlantedClause, Sidecar } from "./fixtures.ts";
+import {
+  ANSWER_SHAPE,
+  FLAGS_SHAPE_NAME,
+  SUMMARY_SHAPE,
+} from "../../lib/analysis/reply-shapes.ts";
+import type { FixtureQuestion, PlantedClause, Sidecar } from "./fixtures.ts";
 
 // A stand-in for the model, for tests. It never calls the network. It builds
 // each reply from a fixture's answer key, choosing what to build by the name
 // of the reply shape the request asks for.
 //
-// To support a new kind of request (answers, counter-offers), add a builder
+// To support a new kind of request (counter-offers), add a builder
 // to DEFAULT_BUILDERS under that shape's name.
 
 export type PayloadBuilder = (sidecar: Sidecar, request: ModelRequest) => unknown;
@@ -14,6 +18,7 @@ export type PayloadBuilder = (sidecar: Sidecar, request: ModelRequest) => unknow
 const DEFAULT_BUILDERS: Record<string, PayloadBuilder> = {
   [SUMMARY_SHAPE.name]: (sidecar) => ({ summary: summaryFrom(sidecar) }),
   [FLAGS_SHAPE_NAME]: (sidecar) => ({ flags: flagsFrom(sidecar) }),
+  [ANSWER_SHAPE.name]: (sidecar, request) => answerFrom(questionAsked(sidecar, request)),
 };
 
 export type StubModel = ModelClient & {
@@ -92,4 +97,34 @@ export function flagFrom(clause: PlantedClause): FlagPayload {
 // The flags a careful model would send: one for every planted clause.
 export function flagsFrom(sidecar: Sidecar): FlagPayload[] {
   return sidecar.planted.map(flagFrom);
+}
+
+// One answer as the model sends it, before the check.
+export type AnswerPayload = {
+  outcome: "answered" | "not-addressed" | "legality";
+  answer: string;
+  passage: string;
+};
+
+// Which of the answer key's questions a request asks. The stub only answers
+// questions the answer key knows, so a test cannot pass on a made-up reply.
+export function questionAsked(sidecar: Sidecar, request: ModelRequest): FixtureQuestion {
+  const found = sidecar.questions.find((q) => request.prompt.includes(q.question));
+  if (!found) {
+    throw new Error("The stub model was asked a question that is not in the answer key.");
+  }
+  return found;
+}
+
+// The answer a careful model would send: the answer key's answer and passage
+// for an answered question, and an empty refusal otherwise.
+export function answerFrom(question: FixtureQuestion): AnswerPayload {
+  if (question.expect === "answered") {
+    return {
+      outcome: "answered",
+      answer: question.answer,
+      passage: question.expectedPassage,
+    };
+  }
+  return { outcome: question.expect, answer: "", passage: "" };
 }

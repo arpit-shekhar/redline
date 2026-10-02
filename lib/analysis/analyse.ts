@@ -126,8 +126,9 @@ function cleanStatement(checkedFor: readonly string[]): string {
 
 // Runs `work` with a signal that fires after `ms` milliseconds, and gives up
 // on it at that point. The signal also fires once `work` settles, so if one of
-// two requests fails, the other is cancelled instead of left running.
-async function withTimeout<T>(
+// two requests fails, the other is cancelled instead of left running. Answer
+// (answer.ts) uses it too.
+export async function withTimeout<T>(
   ms: number,
   work: (signal: AbortSignal) => Promise<T>,
 ): Promise<T> {
@@ -202,7 +203,8 @@ function readFlagList(reply: string): unknown[] {
   return flags;
 }
 
-function parseReply(reply: string): unknown {
+// Reads the model's reply as JSON. Answer (answer.ts) uses it too.
+export function parseReply(reply: string): unknown {
   // A model sometimes wraps JSON in a Markdown code fence (a block marked
   // with three backticks) even when asked not to.
   const json = reply

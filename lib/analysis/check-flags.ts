@@ -25,9 +25,9 @@ const SPACE = /\s/;
 // one space and every curly quote is straight. `origin[i]` is where the
 // character at position i of the copy came from in the original, so a match
 // in the copy can be mapped back to the original text.
-type Folded = { text: string; origin: number[] };
+export type Folded = { text: string; origin: number[] };
 
-function fold(source: string): Folded {
+export function fold(source: string): Folded {
   const chars: string[] = [];
   const origin: number[] = [];
   let i = 0;
@@ -50,8 +50,9 @@ function fold(source: string): Folded {
 
 // Where `quote` sits in the document, or null if it is not there word for
 // word. The location is worked out here from the document, never taken from
-// the model.
-function locate(document: Folded, quote: string): SourceLocation | null {
+// the model. This is the one word-for-word check in Redline: flags use it for
+// their source sentence and Answer uses it for its quoted passage (answer.ts).
+export function locate(document: Folded, quote: string): SourceLocation | null {
   const wanted = fold(quote).text.trim();
   if (wanted === "") return null;
   const at = document.text.indexOf(wanted);

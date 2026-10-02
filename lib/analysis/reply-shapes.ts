@@ -83,3 +83,34 @@ export function flagsShape(clauseTypes: readonly string[]): ReplyShape {
     },
   };
 }
+
+// The reply to one question about the document. The model sorts the question
+// into one of three kinds. Only "answered" fills in `answer` and `passage`;
+// for the other two both are empty strings. Every field is required because
+// the strict JSON mode asks for it; Answer ignores the text of a refusal.
+export const ANSWER_SHAPE: ReplyShape = {
+  name: "answer",
+  schema: {
+    type: "object",
+    properties: {
+      outcome: {
+        type: "string",
+        enum: ["answered", "not-addressed", "legality"],
+        description:
+          '"legality" if the question asks whether anything is legal, lawful, valid or enforceable, or would hold up in court. Otherwise "answered" if the document itself answers the question, and "not-addressed" if it does not.',
+      },
+      answer: {
+        type: "string",
+        description:
+          'The answer in plain English, drawn only from the document. An empty string unless outcome is "answered".',
+      },
+      passage: {
+        type: "string",
+        description:
+          'The sentence, or part of a sentence, the answer comes from, copied character for character from the document. An empty string unless outcome is "answered".',
+      },
+    },
+    required: ["outcome", "answer", "passage"],
+    additionalProperties: false,
+  },
+};

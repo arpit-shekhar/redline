@@ -4,11 +4,15 @@
 // that passed the checks, and how many were held back. It costs a real model
 // call. It never falls back to a stub.
 //
+// It then asks the test document's questions (from its answer key) through
+// the real Answer and prints each outcome with its passage.
+//
 // Run with: npm run smoke
 // Or, for the document with nothing planted: npm run smoke -- clean-document
 
 import { readFileSync } from "node:fs";
 import { analyse } from "../lib/analysis/analyse.ts";
+import { answer } from "../lib/analysis/answer.ts";
 import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "../lib/analysis/red-lines.ts";
 
 const repo = new URL("../", import.meta.url);
@@ -81,6 +85,32 @@ try {
     console.log(
       `\nEvery flag failed the checks. Held back: ${result.withheld}. This is not a clean result.`,
     );
+  }
+
+  const sidecar = JSON.parse(
+    readFileSync(new URL(`tests/fixtures/${fixture}.flags.json`, repo), "utf8"),
+  ) as { questions: { question: string; expect: string; expectedPassage?: string }[] };
+
+  console.log(`\nQuestions (${sidecar.questions.length})`);
+  for (const [index, item] of sidecar.questions.entries()) {
+    const reply = await answer(text, item.question);
+    console.log(`\n${index + 1}. ${item.question}`);
+    console.log(`   Expected: ${item.expect}. Got: ${reply.outcome}.`);
+    if (reply.outcome === "answered") {
+      console.log(`   Answer: ${reply.answer}`);
+      console.log(`   Passage: "${reply.passage.replace(/\s+/g, " ")}"`);
+      if (item.expectedPassage) {
+        const overlaps =
+          reply.passage.includes(item.expectedPassage) ||
+          item.expectedPassage.includes(reply.passage);
+        console.log(`   Passage overlaps the expected one: ${overlaps ? "yes" : "no"}`);
+      }
+    } else if (reply.outcome === "failed") {
+      console.log(`   ${reply.reason}`);
+      process.exitCode = 1;
+    } else {
+      console.log(`   ${reply.statement}`);
+    }
   }
 } catch (error) {
   console.error("Smoke check failed:");

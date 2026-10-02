@@ -1,10 +1,15 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { EDGE_TAB_POSITION } from "../landing/edge-tab.tsx";
 import { paragraphsOf } from "./flagged-document.tsx";
+import { QuestionBox, scrollToPassage, useQuestions, withPassage } from "./question-box.tsx";
 
 // The analysed document drawn as the sheet when nothing was flagged: one grey
 // tab on its right edge reading "Nothing flagged", and the list of clause
 // types that were checked for and not found (ADR 0004). A clean result is
-// never a blank sheet.
+// never a blank sheet. The question box sits in the working column to the
+// right on wide screens, and above the document's text on phones.
 export function CleanDocument({
   text,
   statement,
@@ -14,6 +19,14 @@ export function CleanDocument({
   statement: string;
   checkedFor: string[];
 }) {
+  const questions = useQuestions(text);
+  const { scrollRequest } = questions;
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRequest > 0) scrollToPassage(bodyRef.current);
+  }, [scrollRequest]);
+
   return (
     <section
       aria-labelledby="clean-title"
@@ -59,14 +72,27 @@ export function CleanDocument({
           </p>
         </div>
 
-        <div className="mt-8 flex flex-col gap-5 border-t border-rule pt-5 font-serif text-[1.0625rem] leading-[1.7] text-ink">
+        <div className="mt-8 border-t border-rule pt-5 lg:hidden">
+          <QuestionBox questions={questions} />
+        </div>
+
+        <div
+          ref={bodyRef}
+          className="mt-8 flex flex-col gap-5 border-t border-rule pt-5 font-serif text-[1.0625rem] leading-[1.7] text-ink"
+        >
           {paragraphsOf(text).map(([start, end]) => (
             <p key={start} className="max-w-[62ch] whitespace-pre-wrap break-words">
-              {text.slice(start, end)}
+              {withPassage(text, start, end, questions.shownPassage)}
             </p>
           ))}
         </div>
       </article>
+
+      <aside aria-label="Your questions" className="hidden pl-[6.75rem] pt-20 lg:block">
+        <div className="sticky top-6 bg-sheet px-5 pb-5 pt-4 shadow-[var(--sheet-shadow)]">
+          <QuestionBox questions={questions} />
+        </div>
+      </aside>
     </section>
   );
 }

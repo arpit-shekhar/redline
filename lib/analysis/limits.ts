@@ -21,3 +21,8 @@ export function tooLongMessage(text: string): string {
     `and Redline reads up to ${count(MAX_DOCUMENT_CHARACTERS)}. Nothing was checked.`
   );
 }
+
+// The longest question Redline will take, in characters. A question is a
+// sentence or two. This stops a whole document being pasted in as a question,
+// which would get round the document limit above.
+export const MAX_QUESTION_CHARACTERS = 500;
