@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+/* One printed sheet on a desk, marked with sign-here tabs. Red marks a
+   must-change flag, yellow a worth-raising one, and ballpoint blue is kept for
+   the reader's own actions. */
+:root {
+  --desk: #d3d7dc;
+  --sheet: #fbfcfc;
+  --ink: #1b1b1a;
+  --ink-soft: #50545a;
+  --rule: #d3d6da;
+  --sheet-edge: #b4bac2;
+  /* Tab film is slightly see-through, so the sheet edge shows through where
+     a tab crosses it. The bases are chosen so the film reads at full
+     strength over the sheet, and label text keeps 4.5:1 over sheet and desk. */
+  --tab-red: rgb(205 8 0 / 0.85);
+  --tab-red-ink: #fff7f4;
+  --tab-yellow: rgb(243 184 0 / 0.85);
+  --tab-yellow-ink: #1b1b1a;
+  --film-red: rgb(205 8 0 / 0.1);
+  --film-red-strong: rgb(205 8 0 / 0.2);
+  --film-yellow: rgb(244 194 27 / 0.3);
+  --film-yellow-strong: rgb(244 194 27 / 0.58);
+  --pen: #1f3a93;
+  --tab-shadow: 0 1px 1px rgb(27 27 26 / 0.12), 0 3px 8px rgb(27 27 26 / 0.12);
+  --sheet-shadow: 0 1px 2px rgb(27 27 26 / 0.08), 0 12px 32px rgb(27 27 26 / 0.1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  color-scheme: light;
+}
+
+/* A printed sheet has a visible paper edge on the right, where tabs cross it. */
+.sheet-edge {
+  box-shadow: inset -1px 0 0 var(--sheet-edge), var(--sheet-shadow);
+}
+
+@theme inline {
+  --color-desk: var(--desk);
+  --color-sheet: var(--sheet);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-rule: var(--rule);
+  --color-tab-red: var(--tab-red);
+  --color-tab-red-ink: var(--tab-red-ink);
+  --color-tab-yellow: var(--tab-yellow);
+  --color-tab-yellow-ink: var(--tab-yellow-ink);
+  --color-pen: var(--pen);
+  --font-sans: var(--font-archivo);
+  --font-serif: var(--font-gelasio);
+}
+
+body {
+  background: var(--desk);
+  color: var(--ink);
+  font-family: var(--font-archivo), system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--film-yellow-strong);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--pen);
+  outline-offset: 3px;
+}
+
+a {
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+textarea,
+input,
+select {
+  caret-color: var(--pen);
+}
+
+/* Condensed caps, the voice of every printed tab and heading. */
+.tab-type {
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  font-stretch: 72%;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* A sign-here tab: a strip of coloured film whose pointed end faces the line
+   it marks. */
+.tab {
+  --point: 14px;
+  clip-path: polygon(var(--point) 0, 100% 0, 100% 100%, var(--point) 100%, 0 50%);
+  box-shadow: var(--tab-shadow);
+}
+
+.tab-red {
+  background: var(--tab-red);
+  color: var(--tab-red-ink);
+}
+
+.tab-yellow {
+  background: var(--tab-yellow);
+  color: var(--tab-yellow-ink);
+}
+
+/* A tab pointing right, for actions that lead somewhere. */
+.tab-forward {
+  --point: 18px;
+  clip-path: polygon(0 0, calc(100% - var(--point)) 0, 100% 50%, calc(100% - var(--point)) 100%, 0 100%);
+}
+
+.film-must-change {
+  background: var(--film-red);
+  box-decoration-break: clone;
+  transition: background-color 180ms var(--ease-out-quart);
+}
+
+.film-worth-raising {
+  background: var(--film-yellow);
+  box-decoration-break: clone;
+  transition: background-color 180ms var(--ease-out-quart);
+}
+
+.film-must-change[data-active="true"] {
+  background: var(--film-red-strong);
+}
+
+.film-worth-raising[data-active="true"] {
+  background: var(--film-yellow-strong);
+}
+
+/* Tabs are stuck on one at a time, in rank order, once per page load. They
+   are visible by default; only the entrance is animated. */
+@keyframes tab-stick {
+  from {
+    transform: translateX(32px);
+    opacity: 0;
+  }
+}
+
+.tab-enter {
+  animation: tab-stick 560ms var(--ease-out-quart) backwards;
+  animation-delay: calc(350ms + var(--rank) * 160ms);
+}
+
+/* The open note slides to sit beside whichever tab opened it. */
+.note-follow {
+  transition: transform 260ms var(--ease-out-quart);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-enter {
+    animation: none;
+  }
+  .note-follow {
+    transition: none;
+  }
+  .film-must-change,
+  .film-worth-raising {
+    transition: none;
+  }
+}

@@ -157,3 +157,11 @@ $RECYCLE.BIN/
 tmp/
 temp/
 .history/
+
+# Next.js writes this; ignored per its own advice
+next-env.d.ts
+
+# Impeccable working files: review screenshots, decision-page logs, hook cache
+.impeccable/review/
+.impeccable/questions/
+.impeccable/hook.cache.json

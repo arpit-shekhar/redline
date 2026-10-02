@@ -1,0 +1,3 @@
+```json
+{"summary": "You agree to design a logo and packaging labels for Northgate Bakery for a fixed fee of 2,400 pounds.\n\nYou are paid within 60 days of the client accepting the final designs, and the client decides when that happens. The client can ask for up to three rounds of changes first.\n\nThe client owns the designs as soon as you deliver them, even if it has not paid you.\n\nThe agreement renews every twelve months unless someone gives 90 days' written notice. The client can end it with 7 days' notice; you need to give 60."}
+```

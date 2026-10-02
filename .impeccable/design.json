@@ -1,0 +1,411 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T15:01:07+00:00",
+  "title": "Design System: Redline",
+  "extensions": {
+    "colorMeta": {
+      "desk": {
+        "role": "neutral",
+        "displayName": "Cool Grey Desk",
+        "canonical": "#d3d7dc",
+        "tonalRamp": [
+          "oklch(15% 0.008 250)",
+          "oklch(27% 0.008 250)",
+          "oklch(39% 0.008 250)",
+          "oklch(51% 0.008 250)",
+          "oklch(63% 0.008 250)",
+          "oklch(75% 0.008 250)",
+          "oklch(85% 0.008 250)",
+          "oklch(95% 0.008 250)"
+        ]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "Laser Paper",
+        "canonical": "#fbfcfc",
+        "tonalRamp": [
+          "oklch(15% 0.003 197)",
+          "oklch(27% 0.003 197)",
+          "oklch(39% 0.003 197)",
+          "oklch(51% 0.003 197)",
+          "oklch(63% 0.003 197)",
+          "oklch(75% 0.003 197)",
+          "oklch(85% 0.003 197)",
+          "oklch(95% 0.003 197)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Toner Black",
+        "canonical": "#1b1b1a",
+        "tonalRamp": [
+          "oklch(15% 0.003 106)",
+          "oklch(27% 0.003 106)",
+          "oklch(39% 0.003 106)",
+          "oklch(51% 0.003 106)",
+          "oklch(63% 0.003 106)",
+          "oklch(75% 0.003 106)",
+          "oklch(85% 0.003 106)",
+          "oklch(95% 0.003 106)"
+        ]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Faded Toner",
+        "canonical": "#50545a",
+        "tonalRamp": [
+          "oklch(15% 0.012 255)",
+          "oklch(27% 0.012 255)",
+          "oklch(39% 0.012 255)",
+          "oklch(51% 0.012 255)",
+          "oklch(63% 0.012 255)",
+          "oklch(75% 0.012 255)",
+          "oklch(85% 0.012 255)",
+          "oklch(95% 0.012 255)"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Ruled Line",
+        "canonical": "#d3d6da",
+        "tonalRamp": [
+          "oklch(15% 0.006 250)",
+          "oklch(27% 0.006 250)",
+          "oklch(39% 0.006 250)",
+          "oklch(51% 0.006 250)",
+          "oklch(63% 0.006 250)",
+          "oklch(75% 0.006 250)",
+          "oklch(85% 0.006 250)",
+          "oklch(95% 0.006 250)"
+        ]
+      },
+      "sheet-edge": {
+        "role": "neutral",
+        "displayName": "Paper Edge",
+        "canonical": "#b4bac2",
+        "tonalRamp": [
+          "oklch(15% 0.014 255)",
+          "oklch(27% 0.014 255)",
+          "oklch(39% 0.014 255)",
+          "oklch(51% 0.014 255)",
+          "oklch(63% 0.014 255)",
+          "oklch(75% 0.014 255)",
+          "oklch(85% 0.014 255)",
+          "oklch(95% 0.014 255)"
+        ]
+      },
+      "tab-red": {
+        "role": "primary",
+        "displayName": "Tab Red",
+        "canonical": "rgb(205 8 0 / 0.85)",
+        "tonalRamp": [
+          "oklch(15% 0.2 29)",
+          "oklch(27% 0.2 29)",
+          "oklch(39% 0.2 29)",
+          "oklch(51% 0.2 29)",
+          "oklch(63% 0.2 29)",
+          "oklch(75% 0.2 29)",
+          "oklch(85% 0.2 29)",
+          "oklch(95% 0.2 29)"
+        ]
+      },
+      "tab-red-ink": {
+        "role": "primary",
+        "displayName": "Tab Red Ink",
+        "canonical": "#fff7f4",
+        "tonalRamp": [
+          "oklch(15% 0.02 40)",
+          "oklch(27% 0.02 40)",
+          "oklch(39% 0.02 40)",
+          "oklch(51% 0.02 40)",
+          "oklch(63% 0.02 40)",
+          "oklch(75% 0.02 40)",
+          "oklch(85% 0.02 40)",
+          "oklch(95% 0.02 40)"
+        ]
+      },
+      "film-red": {
+        "role": "primary",
+        "displayName": "Red Film",
+        "canonical": "rgb(205 8 0 / 0.1)"
+      },
+      "film-red-strong": {
+        "role": "primary",
+        "displayName": "Red Film, chosen",
+        "canonical": "rgb(205 8 0 / 0.2)"
+      },
+      "tab-yellow": {
+        "role": "secondary",
+        "displayName": "Tab Yellow",
+        "canonical": "rgb(243 184 0 / 0.85)",
+        "tonalRamp": [
+          "oklch(15% 0.16 83)",
+          "oklch(27% 0.16 83)",
+          "oklch(39% 0.16 83)",
+          "oklch(51% 0.16 83)",
+          "oklch(63% 0.16 83)",
+          "oklch(75% 0.16 83)",
+          "oklch(85% 0.16 83)",
+          "oklch(95% 0.16 83)"
+        ]
+      },
+      "tab-yellow-ink": {
+        "role": "secondary",
+        "displayName": "Toner Black on Yellow",
+        "canonical": "#1b1b1a"
+      },
+      "film-yellow": {
+        "role": "secondary",
+        "displayName": "Yellow Film",
+        "canonical": "rgb(244 194 27 / 0.3)"
+      },
+      "film-yellow-strong": {
+        "role": "secondary",
+        "displayName": "Yellow Film, chosen",
+        "canonical": "rgb(244 194 27 / 0.58)"
+      },
+      "pen": {
+        "role": "tertiary",
+        "displayName": "Ballpoint Blue",
+        "canonical": "#1f3a93",
+        "tonalRamp": [
+          "oklch(15% 0.15 266)",
+          "oklch(27% 0.15 266)",
+          "oklch(39% 0.15 266)",
+          "oklch(51% 0.15 266)",
+          "oklch(63% 0.15 266)",
+          "oklch(75% 0.15 266)",
+          "oklch(85% 0.15 266)",
+          "oklch(95% 0.15 266)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The one headline at the top of a surface, in narrow capitals."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings on later sheets."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "A document's own title and result headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Redline's explanations, at most 62 characters per line."
+      },
+      "body-small": {
+        "displayName": "Small body",
+        "purpose": "Fine print, field hints and the letterhead link."
+      },
+      "document": {
+        "displayName": "Document",
+        "purpose": "The text of the document being read, in the Georgia-width serif."
+      },
+      "document-quote": {
+        "displayName": "Document quote",
+        "purpose": "A single source sentence shown large with its film."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Tab labels, clause numbers, form labels."
+      },
+      "label-small": {
+        "displayName": "Small label",
+        "purpose": "Captions naming where a quote came from, severity words beside a row."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sheet-shadow",
+        "value": "0 1px 2px rgb(27 27 26 / 0.08), 0 12px 32px rgb(27 27 26 / 0.1)",
+        "purpose": "Every sheet and every flag note: paper resting on the desk."
+      },
+      {
+        "name": "sheet-edge",
+        "value": "inset -1px 0 0 #b4bac2",
+        "purpose": "The visible paper edge on the right of sheets that carry tabs; paired with the sheet shadow."
+      },
+      {
+        "name": "tab-shadow",
+        "value": "0 1px 1px rgb(27 27 26 / 0.12), 0 3px 8px rgb(27 27 26 / 0.12)",
+        "purpose": "Every tab: film lifted slightly off the paper."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-quart",
+        "value": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Fast-then-gentle curve for the tab entrance, film tint and note slide."
+      },
+      {
+        "name": "tab-stick",
+        "value": "560ms ease-out-quart; from translateX(32px) and opacity 0; delay 350ms + rank x 160ms",
+        "purpose": "Tabs sticking on one at a time in rank order, once per page load."
+      },
+      {
+        "name": "film-tint",
+        "value": "background-color 180ms ease-out-quart",
+        "purpose": "A sentence's film deepening when its flag is chosen."
+      },
+      {
+        "name": "note-follow",
+        "value": "transform 260ms ease-out-quart",
+        "purpose": "The open note sliding to stay level with its tab."
+      },
+      {
+        "name": "tab-nudge",
+        "value": "transform 200ms ease-out; 4px on hover, 6px when chosen",
+        "purpose": "A tab moving toward the sheet, or the forward tab moving toward where it leads."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce",
+        "purpose": "Entrance, film transition and note slide are all switched off."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Forward Tab (main action)",
+      "kind": "button",
+      "refersTo": "tab-forward-large",
+      "description": "The page's one action, drawn as a red tab pointing right toward where it leads.",
+      "html": "<a href=\"#\" class=\"ds-tab-forward-link\"><span class=\"ds-tab-forward\">Try it on a document</span></a>",
+      "css": ".ds-tab-forward-link { display: inline-block; border-radius: 4px; text-decoration: none; } .ds-tab-forward-link:focus-visible { outline: 2px solid var(--pen, #1f3a93); outline-offset: 3px; } .ds-tab-forward { display: block; font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-stretch: 72%; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; font-size: 1.125rem; padding: 16px 44px 16px 24px; background: var(--tab-red, rgb(205 8 0 / 0.85)); color: var(--tab-red-ink, #fff7f4); clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%); box-shadow: 0 1px 1px rgb(27 27 26 / 0.12), 0 3px 8px rgb(27 27 26 / 0.12); transition: transform 200ms ease-out; } .ds-tab-forward-link:hover .ds-tab-forward { transform: translateX(4px); }"
+    },
+    {
+      "name": "Edge Tab, must-change",
+      "kind": "custom",
+      "refersTo": "edge-tab-must-change",
+      "description": "A red film tab stuck beside a must-change sentence, pointed end toward it.",
+      "html": "<button type=\"button\" class=\"ds-edge-tab\" aria-pressed=\"false\"><span class=\"ds-edge-rank\">1</span><span>Must change</span></button>",
+      "css": ".ds-edge-tab { display: flex; align-items: center; gap: 8px; height: 40px; width: 200px; padding: 0 12px 0 20px; border: 0; cursor: pointer; font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-stretch: 72%; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.8125rem; background: var(--tab-red, rgb(205 8 0 / 0.85)); color: var(--tab-red-ink, #fff7f4); clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%); box-shadow: 0 1px 1px rgb(27 27 26 / 0.12), 0 3px 8px rgb(27 27 26 / 0.12); transition: transform 200ms ease-out; } .ds-edge-tab:hover { transform: translateX(-4px); } .ds-edge-tab[aria-pressed=\"true\"] { transform: translateX(-6px); } .ds-edge-tab:focus-visible { outline: 2px solid var(--pen, #1f3a93); outline-offset: 3px; } .ds-edge-rank { font-size: 1rem; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Edge Tab, worth-raising",
+      "kind": "custom",
+      "refersTo": "edge-tab-worth-raising",
+      "description": "A yellow film tab stuck beside a worth-raising sentence; its label is black.",
+      "html": "<button type=\"button\" class=\"ds-edge-tab-y\" aria-pressed=\"false\"><span class=\"ds-edge-rank-y\">3</span><span>Worth raising</span></button>",
+      "css": ".ds-edge-tab-y { display: flex; align-items: center; gap: 8px; height: 40px; width: 200px; padding: 0 12px 0 20px; border: 0; cursor: pointer; font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-stretch: 72%; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.8125rem; background: var(--tab-yellow, rgb(243 184 0 / 0.85)); color: var(--tab-yellow-ink, #1b1b1a); clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%); box-shadow: 0 1px 1px rgb(27 27 26 / 0.12), 0 3px 8px rgb(27 27 26 / 0.12); transition: transform 200ms ease-out; } .ds-edge-tab-y:hover { transform: translateX(-4px); } .ds-edge-tab-y:focus-visible { outline: 2px solid var(--pen, #1f3a93); outline-offset: 3px; } .ds-edge-rank-y { font-size: 1rem; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Film on a source sentence",
+      "kind": "custom",
+      "refersTo": "film-must-change",
+      "description": "The tint a tab casts on the sentence it marks; deepens when its flag is chosen.",
+      "html": "<p class=\"ds-doc\">The Client will pay a fixed fee. <mark class=\"ds-film-red\">Payment is due within 60 days of written acceptance.</mark> <mark class=\"ds-film-yellow ds-active\">Either party may end this agreement with seven days of notice.</mark></p>",
+      "css": ".ds-doc { font-family: var(--font-gelasio), Gelasio, Georgia, serif; font-size: 1.0625rem; line-height: 1.7; color: var(--ink, #1b1b1a); max-width: 62ch; } .ds-film-red, .ds-film-yellow { color: var(--ink, #1b1b1a); border-radius: 2px; padding: 0 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; cursor: pointer; transition: background-color 180ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-film-red { background: rgb(205 8 0 / 0.1); } .ds-film-red:hover { background: rgb(205 8 0 / 0.2); } .ds-film-yellow { background: rgb(244 194 27 / 0.3); } .ds-film-yellow.ds-active, .ds-film-yellow:hover { background: rgb(244 194 27 / 0.58); }"
+    },
+    {
+      "name": "Flag Note",
+      "kind": "card",
+      "refersTo": "flag-note",
+      "description": "A second slip of paper beside the chosen tab: the flag, what it says, and its source sentence.",
+      "html": "<div class=\"ds-note\"><p class=\"ds-note-head\"><span class=\"ds-caps\">1. Must change:</span> <strong>Weak freelance payment terms</strong></p><div><p class=\"ds-caps ds-small\">What it says</p><p class=\"ds-note-text\">You are paid 60 days after the client accepts the final designs.</p></div><figure class=\"ds-note-quote\"><blockquote>\"Payment is due within 60 days of written acceptance.\"</blockquote><figcaption class=\"ds-caps ds-small\">Clause 2, word for word</figcaption></figure></div>",
+      "css": ".ds-note { display: flex; flex-direction: column; gap: 16px; max-width: 320px; background: var(--sheet, #fbfcfc); color: var(--ink, #1b1b1a); padding: 16px 20px 20px; font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-size: 1rem; box-shadow: 0 1px 2px rgb(27 27 26 / 0.08), 0 12px 32px rgb(27 27 26 / 0.1); } .ds-note p { margin: 0; } .ds-note-head { line-height: 1.375; } .ds-note-head strong { font-weight: 600; } .ds-caps { font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-stretch: 72%; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.875rem; } .ds-small { font-size: 0.75rem; color: var(--ink-soft, #50545a); } .ds-note-text { margin-top: 4px; line-height: 1.625; } .ds-note-quote { margin: 0; border-top: 1px solid var(--rule, #d3d6da); padding-top: 16px; } .ds-note-quote blockquote { margin: 0; font-family: var(--font-gelasio), Gelasio, Georgia, serif; line-height: 1.625; } .ds-note-quote figcaption { margin-top: 8px; }"
+    },
+    {
+      "name": "Sheet with letterhead",
+      "kind": "nav",
+      "refersTo": "sheet",
+      "description": "The page itself: a square paper sheet on the grey desk, topped by a letterhead with the wordmark and one link.",
+      "html": "<div class=\"ds-desk\"><div class=\"ds-sheet\"><header class=\"ds-letterhead\"><span class=\"ds-wordmark\">Redline</span><a href=\"#\" class=\"ds-link\">Try it on a document</a></header><h1 class=\"ds-display\">Read what you are about to accept</h1></div></div>",
+      "css": ".ds-desk { background: var(--desk, #d3d7dc); padding: 24px; } .ds-sheet { background: var(--sheet, #fbfcfc); padding: 36px 80px 40px 48px; box-shadow: inset -1px 0 0 var(--sheet-edge, #b4bac2), 0 1px 2px rgb(27 27 26 / 0.08), 0 12px 32px rgb(27 27 26 / 0.1); } .ds-letterhead { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--rule, #d3d6da); padding-bottom: 16px; } .ds-wordmark { font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-stretch: 72%; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; letter-spacing: 0.08em; font-size: 1.125rem; color: var(--ink, #1b1b1a); } .ds-link { font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; color: var(--pen, #1f3a93); text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; } .ds-link:focus-visible { outline: 2px solid var(--pen, #1f3a93); outline-offset: 3px; } .ds-display { font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-stretch: 72%; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; font-size: clamp(2rem, 1.4rem + 2.8vw, 3.5rem); line-height: 0.95; color: var(--ink, #1b1b1a); margin: 40px 0 0; }"
+    },
+    {
+      "name": "Document text field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Where the reader pastes a document: paper fill, faded toner border, serif text, blue pen cursor.",
+      "html": "<div class=\"ds-field\"><label for=\"ds-text\" class=\"ds-field-label\">The document text</label><p class=\"ds-field-hint\">The text is sent to an AI model to be read.</p><textarea id=\"ds-text\" rows=\"5\" class=\"ds-textarea\"></textarea></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; max-width: 520px; } .ds-field-label { font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-stretch: 72%; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.875rem; color: var(--ink, #1b1b1a); } .ds-field-hint { margin: 0; font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-size: 0.875rem; color: var(--ink-soft, #50545a); } .ds-textarea { background: var(--sheet, #fbfcfc); color: var(--ink, #1b1b1a); border: 1px solid var(--ink-soft, #50545a); border-radius: 4px; padding: 16px; font-family: var(--font-gelasio), Gelasio, Georgia, serif; font-size: 1rem; line-height: 1.625; caret-color: var(--pen, #1f3a93); } .ds-textarea:focus-visible { outline: 2px solid var(--pen, #1f3a93); outline-offset: 3px; }"
+    },
+    {
+      "name": "Document type select",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "A plain native dropdown in the same paper field style.",
+      "html": "<select class=\"ds-select\"><option>Choose one</option><option>Freelance agreement</option></select>",
+      "css": ".ds-select { width: 100%; max-width: 320px; background: var(--sheet, #fbfcfc); color: var(--ink, #1b1b1a); border: 1px solid var(--ink-soft, #50545a); border-radius: 4px; padding: 10px 12px; font-family: var(--font-archivo), Archivo, system-ui, sans-serif; font-size: 1rem; } .ds-select:focus-visible { outline: 2px solid var(--pen, #1f3a93); outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Sign-Here Sheet",
+    "overview": "Every Redline screen is one white printed sheet lying on a cool grey desk. The document being read is the sheet. When something in it matters, a coloured adhesive tab is stuck beside the exact sentence, the way a contract arrives from a lawyer marked \"sign here\". The tab is see-through film, so the sentence it marks is tinted in the same colour. Red tabs mark must-change flags. Yellow tabs mark worth-raising flags. Ballpoint blue is the reader's own pen, and appears only where the reader acts.\n\nThe world is quiet and literal. Text sits on paper at a comfortable reading size, with wide margins. Depth comes from paper resting on a desk: soft shadows, a thin visible paper edge on the right, and tabs that stick out past that edge onto the grey. Contract text is set in a serif that matches Georgia's letter widths, because that is how emailed agreements usually print. Everything Redline itself says (headings, tab labels, controls) is set in narrow, heavy capitals, like the print on a stationery tab.\n\nMotion is spare. On first load the tabs stick on one at a time in rank order, sliding in from the right and settling. After that, only tab state changes move: a tab nudges toward the sheet when chosen, its sentence's tint deepens, and its note slides level with it. Nothing else animates.",
+    "keyCharacteristics": [
+      "One sheet per surface, square-cornered, on a grey desk.",
+      "Tabs are the only strong colour, and colour always means severity (red or yellow) or the reader's own action (blue).",
+      "A tab is always attached to something: a sentence, a row, or an action.",
+      "Two voices: a Georgia-like serif for the document, condensed capitals for Redline.",
+      "One entrance animation, then only state changes."
+    ],
+    "rules": [
+      {
+        "name": "The Colour Means Severity Rule",
+        "body": "Red and yellow appear only as tabs and their film, and they always mean must-change and worth-raising. The red forward tab for the main action is the single exception, because it is still a tab. Never use red or yellow for decoration, warnings unrelated to a flag, or emphasis.",
+        "section": "colors"
+      },
+      {
+        "name": "The Reader's Pen Rule",
+        "body": "Ballpoint blue marks only the reader's own actions: links, focus rings and the text cursor. Redline's own voice never writes in blue.",
+        "section": "colors"
+      },
+      {
+        "name": "The Film Contrast Rule",
+        "body": "Tab colours are chosen so labels keep at least 4.5 to 1 contrast (the minimum readable ratio for small text) over both the sheet and the desk. Red tabs take off-white labels; yellow tabs take black ones.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Voices Rule",
+        "body": "The document is always in the serif. Redline is always in Archivo. A source sentence quoted anywhere, including inside a note, keeps the serif so it reads as the document's own words.",
+        "section": "typography"
+      },
+      {
+        "name": "The Printed Caps Rule",
+        "body": "Narrow capitals are for headings, tab labels, controls and short captions only. Never set a sentence of explanation in them.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sheet Is The Page Rule",
+        "body": "A surface is a sheet on a desk, never a dashboard of panels. When the signed-in app is built, the document stays the sheet, the margin column to its right becomes the working column (the selected flag's note, then the question box), and any navigation is a narrow strip on the left of the desk, not a second sheet.",
+        "section": "layout"
+      },
+      {
+        "name": "The Two Layers Rule",
+        "body": "Paper sits on the desk; film sits on the paper. A note is a second slip of paper and takes the sheet shadow. There is no third, higher layer, and no pop-up windows.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do put every surface on a Laser Paper sheet (#fbfcfc) resting on the Cool Grey Desk (#d3d7dc), with square corners and the sheet shadow.",
+      "Do attach every tab to the exact sentence or row it marks, pointed end toward it, sticking out past the sheet's right edge.",
+      "Do tint the source sentence with the film of its tab's colour, and deepen the film when the flag is chosen.",
+      "Do set document text, and any quote from it, in Gelasio at a comfortable reading size.",
+      "Do keep Ballpoint Blue (#1f3a93) for links, focus rings and the text cursor only.",
+      "Do keep motion to the single tab entrance and tab state changes, and switch both off when the reader's device asks for reduced motion."
+    ],
+    "donts": [
+      "Don't use red or yellow for anything but a tab, its film, or the forward action tab.",
+      "Don't draw a rounded card, a bordered box or a pill as a container or a button. A container is a sheet or a slip of paper; a button is a tab.",
+      "Don't use gradients, icons or illustrations to stand in for a tab or a flag.",
+      "Don't add a hard, solid offset shadow, or any shadow stronger than the sheet shadow.",
+      "Don't set Redline's explanations in the serif, or the document's words in Archivo.",
+      "Don't show a tab whose source sentence is not on the sheet."
+    ]
+  }
+}

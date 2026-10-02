@@ -25,7 +25,7 @@ something not on the list looks like the obvious next step, ask me first.
 - The uploaded file is parsed in the browser. Only its extracted text is stored.
 - Every risk flag cites the exact sentence it came from. A flag whose source
   sentence cannot be shown is a bug, not a limitation to work around.
-- OpenRouter, model `anthropic/claude-opus-5`, pinned in one module. Check the
+- OpenRouter, model `anthropic/claude-sonnet-5`, pinned in one module. Check the
   name against OpenRouter's live list on first call. Never switch without asking.
 - The decision records in `docs/adr/` are binding, including 0002 although it
   says `proposed`. Where the PRD or spec disagrees with one, the record wins.
@@ -42,6 +42,10 @@ something not on the list looks like the obvious next step, ask me first.
   the product does not make it.
 - Ask me before adding a dependency. Already approved: what `create-next-app`,
   the Supabase client and an OpenRouter call normally install.
+- All copy a user reads in this product, meaning the landing page, UI labels,
+  error messages and empty states, has to be run through the humanizer skill
+  before it is committed. Copy that reads as though a model wrote it is a
+  defect, not a matter of taste.
 
 ## When I am not watching
 
