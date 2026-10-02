@@ -15,6 +15,12 @@ const PROVIDER = {
 
 const REASONING = { effort: "low" };
 
+// How long one analysis may wait for the model, in milliseconds. After this
+// the analysis stops, cancels any request still running, and reports that it
+// failed. A long document can take the model a minute to read, so this
+// leaves room for that and little more.
+export const MODEL_TIMEOUT_MS = 90_000;
+
 // A JSON Schema (a description of the exact JSON shape a reply must have) with
 // a name. The model is asked to reply in this shape.
 export type ReplyShape = {
@@ -26,6 +32,8 @@ export type ModelRequest = {
   system: string;
   prompt: string;
   shape: ReplyShape;
+  // Fires when the caller stops waiting, so the request can be cancelled.
+  signal?: AbortSignal;
 };
 
 // What the analysis core depends on. `complete` sends one request and returns
@@ -69,10 +77,10 @@ export function createOpenRouterClient(
   // Each model name is checked against the live list once. A failed check is
   // forgotten, so a network blip is retried on the next call.
   const checks = new Map<string, Promise<void>>();
-  const checkOnce = (model: string) => {
+  const checkOnce = (model: string, signal?: AbortSignal) => {
     let check = checks.get(model);
     if (!check) {
-      check = checkModelIsListed(fetchFn, model).catch((error) => {
+      check = checkModelIsListed(fetchFn, model, signal).catch((error) => {
         checks.delete(model);
         throw error;
       });
@@ -86,12 +94,13 @@ export function createOpenRouterClient(
       const apiKey = readSetting(env, "OPENROUTER_API_KEY");
       const model = readSetting(env, "OPENROUTER_MODEL");
 
-      await checkOnce(model);
+      await checkOnce(model, request.signal);
 
       let response: Response;
       try {
         response = await fetchFn(`${OPENROUTER_URL}/chat/completions`, {
           method: "POST",
+          signal: request.signal,
           headers: {
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
@@ -148,10 +157,11 @@ function readSetting(
 async function checkModelIsListed(
   fetchFn: typeof fetch,
   model: string,
+  signal?: AbortSignal,
 ): Promise<void> {
   let response: Response;
   try {
-    response = await fetchFn(`${OPENROUTER_URL}/models`);
+    response = await fetchFn(`${OPENROUTER_URL}/models`, { signal });
   } catch (error) {
     throw new ModelCallError("Could not reach OpenRouter's model list.", {
       cause: error,

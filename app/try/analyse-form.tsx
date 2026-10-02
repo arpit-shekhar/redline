@@ -3,15 +3,28 @@
 import { startTransition, useActionState, type ReactNode } from "react";
 import { DOCUMENT_TYPES } from "@/lib/analysis/types.ts";
 import { analyseDocument, type AnalyseState } from "./actions.ts";
+import { CleanDocument } from "./clean-document.tsx";
 import { FlaggedDocument } from "./flagged-document.tsx";
 
 const initialState: AnalyseState = { status: "idle" };
 
 // The paste sheet (its heading passed in as `intro`), the summary on it once
-// the document is read, and then the document itself as a second sheet
-// carrying its flags.
+// the document is read, and then the document itself as a second sheet:
+// carrying its flags, or its checklist when nothing was flagged. A failed
+// analysis shows a notice and a retry, and nothing else.
 export function AnalyseForm({ intro }: { intro: ReactNode }) {
   const [state, submit, pending] = useActionState(analyseDocument, initialState);
+  const result = state.status === "done" ? state.result : undefined;
+
+  // Runs the analysis again on the text that failed, so the reader does not
+  // have to paste it again, even if they have since changed the box.
+  const retry = () => {
+    if (state.status !== "failed") return;
+    const data = new FormData();
+    data.set("documentType", state.documentType);
+    data.set("text", state.text);
+    startTransition(() => submit(data));
+  };
 
   return (
     <>
@@ -74,26 +87,62 @@ export function AnalyseForm({ intro }: { intro: ReactNode }) {
         </form>
 
         <section aria-live="polite" aria-busy={pending} className="mt-12">
-          {state.status === "error" && (
+          {state.status === "invalid" && (
             <p role="alert" className="border border-tab-red bg-sheet p-4 text-ink">
               {state.message}
             </p>
           )}
-          {state.status === "done" && (
+          {state.status === "failed" && (
+            <div role="alert" className="flex flex-col items-start gap-4 border border-ink-soft bg-sheet p-4">
+              <p className="max-w-[60ch] text-ink">
+                The analysis failed, so Redline shows none of it. You do not need to
+                paste the document again.
+              </p>
+              <button
+                type="button"
+                onClick={retry}
+                disabled={pending}
+                className="group rounded-sm disabled:cursor-wait"
+              >
+                <span className="tab tab-red tab-forward tab-type block py-2.5 pl-4 pr-9 text-sm transition-transform duration-200 ease-out group-enabled:group-hover:translate-x-1 group-disabled:opacity-70">
+                  {pending ? "Trying again…" : "Try again"}
+                </span>
+              </button>
+            </div>
+          )}
+          {result && (
             <>
               <h2 className="tab-type mb-4 text-xl text-ink">What this document does</h2>
               <div className="flex max-w-[65ch] flex-col gap-4 text-lg leading-relaxed text-ink">
-                {state.summary.split(/\n\s*\n/).map((paragraph, index) => (
+                {result.summary.split(/\n\s*\n/).map((paragraph, index) => (
                   <p key={index}>{paragraph}</p>
                 ))}
               </div>
             </>
           )}
+          {result?.outcome === "withheld" && (
+            <p className="mt-8 max-w-[65ch] border-t border-rule pt-4 text-base leading-relaxed text-ink">
+              Redline held back {result.withheld} {result.withheld === 1 ? "flag" : "flags"}{" "}
+              because it could not check {result.withheld === 1 ? "it" : "them"} against
+              your document, so it cannot call this document clean.
+            </p>
+          )}
         </section>
       </div>
 
-      {state.status === "done" && (state.flags.length > 0 || state.dropped > 0) && (
-        <FlaggedDocument text={state.text} flags={state.flags} dropped={state.dropped} />
+      {state.status === "done" && state.result.outcome === "flagged" && (
+        <FlaggedDocument
+          text={state.text}
+          flags={state.result.flags}
+          dropped={state.result.dropped}
+        />
+      )}
+      {state.status === "done" && state.result.outcome === "clean" && (
+        <CleanDocument
+          text={state.text}
+          statement={state.result.statement}
+          checkedFor={state.result.checkedFor}
+        />
       )}
     </>
   );

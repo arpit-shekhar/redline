@@ -59,10 +59,53 @@ export type Flag = {
   escapabilityReasoning: string;
 };
 
-export type Analysis = {
+// What Analyse returns. Exactly one of four outcomes, so a screen has to say
+// which one it is showing and can never mistake one for another.
+export type AnalysisOutcome =
+  | FlaggedResult
+  | CleanResult
+  | WithheldResult
+  | FailedAnalysis;
+
+// An analysis that finished. Failure is the one outcome left out.
+export type AnalysisResult = Exclude<AnalysisOutcome, FailedAnalysis>;
+
+// At least one flag passed the checks.
+export type FlaggedResult = {
+  outcome: "flagged";
   summary: string;
   // Must-change first, then worth-raising, each in document order.
   flags: Flag[];
   // How many flags the model sent that failed the checks and were held back.
   dropped: number;
+  // The clause types the analysis looked for. Never empty.
+  checkedFor: string[];
+};
+
+// Nothing was flagged and nothing was held back (ADR 0004): the document gets
+// its checklist, never silence.
+export type CleanResult = {
+  outcome: "clean";
+  summary: string;
+  // A plain sentence saying nothing was found.
+  statement: string;
+  // The clause types the analysis looked for and did not find. Never empty.
+  checkedFor: string[];
+};
+
+// The model sent flags, but every one failed the checks. This is not a clean
+// result: something may be there that Redline could not show.
+export type WithheldResult = {
+  outcome: "withheld";
+  summary: string;
+  // How many flags were held back. Always at least one.
+  withheld: number;
+};
+
+// The model call failed, took too long, or sent a reply that could not be
+// read. Nothing from the run is kept, so no part of a result can be shown.
+export type FailedAnalysis = {
+  outcome: "failed";
+  // For the server log only: what went wrong, never any document text.
+  reason: string;
 };

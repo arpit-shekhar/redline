@@ -167,7 +167,7 @@ export function FlaggedDocument({
 
 // Paragraphs are separated by a blank line. Each is a [start, end) range of
 // the text, so positions inside it still match the flags' source locations.
-function paragraphsOf(text: string): [number, number][] {
+export function paragraphsOf(text: string): [number, number][] {
   const ranges: [number, number][] = [];
   const breaks = /\n[^\S\n]*\n\s*/g;
   let start = 0;

@@ -20,6 +20,7 @@ type Call = {
   url: string;
   headers?: Record<string, string>;
   body?: Record<string, unknown>;
+  signal?: AbortSignal | null;
 };
 
 // A stand-in for OpenRouter that lists the given models and records each call.
@@ -34,6 +35,7 @@ function fakeOpenRouter(
       url,
       headers: init?.headers as Record<string, string> | undefined,
       body: init?.body ? JSON.parse(String(init.body)) : undefined,
+      signal: init?.signal,
     });
     if (url.endsWith("/models")) {
       return Response.json({ data: listedModels.map((id) => ({ id })) });
@@ -173,4 +175,15 @@ test("a reply with no text is an error", async () => {
   const client = createOpenRouterClient({ env, fetch: openRouter.fetch });
 
   await assert.rejects(client.complete(request), ModelCallError);
+});
+
+test("passes the caller's signal on, so a request that takes too long can be cancelled", async () => {
+  const openRouter = fakeOpenRouter([MODEL]);
+  const client = createOpenRouterClient({ env, fetch: openRouter.fetch });
+  const controller = new AbortController();
+
+  await client.complete({ ...request, signal: controller.signal });
+
+  assert.equal(openRouter.chatCalls()[0].signal, controller.signal);
+  assert.equal(openRouter.listCalls()[0].signal, controller.signal);
 });

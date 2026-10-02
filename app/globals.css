@@ -17,6 +17,10 @@
   --tab-red-ink: #fff7f4;
   --tab-yellow: rgb(243 184 0 / 0.85);
   --tab-yellow-ink: #1b1b1a;
+  /* A grey tab marks a clean result: no severity, so no colour. Its label
+     keeps 4.5:1 over sheet and desk. */
+  --tab-grey: rgb(80 84 90 / 0.85);
+  --tab-grey-ink: #fbfcfc;
   --film-red: rgb(205 8 0 / 0.1);
   --film-red-strong: rgb(205 8 0 / 0.2);
   --film-yellow: rgb(244 194 27 / 0.3);
@@ -100,6 +104,11 @@ select {
 .tab-yellow {
   background: var(--tab-yellow);
   color: var(--tab-yellow-ink);
+}
+
+.tab-grey {
+  background: var(--tab-grey);
+  color: var(--tab-grey-ink);
 }
 
 /* A tab pointing right, for actions that lead somewhere. */

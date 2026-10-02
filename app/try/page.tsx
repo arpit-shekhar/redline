@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { AnalyseForm } from "./analyse-form.tsx";
 
+// How many seconds the host lets the analysis run on the server before
+// stopping it. It must stay above MODEL_TIMEOUT_MS in lib/analysis/model.ts,
+// so Redline's own time limit is reached first and the reader is told the
+// analysis failed. Next.js needs a plain number here, not an imported one.
+export const maxDuration = 120;
+
 export default function Try() {
   return (
     <main className="px-3 py-3 sm:px-6 sm:py-6 lg:px-8">

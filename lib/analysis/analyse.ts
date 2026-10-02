@@ -1,16 +1,32 @@
 import { checkFlags, describeHeldBack } from "./check-flags.ts";
-import { openRouterClient, type ModelClient } from "./model.ts";
+import {
+  MODEL_TIMEOUT_MS,
+  openRouterClient,
+  type ModelClient,
+} from "./model.ts";
 import { flagsShape, SUMMARY_SHAPE } from "./reply-shapes.ts";
 import {
   DOCUMENT_TYPES,
   type AnalyseInput,
-  type Analysis,
+  type AnalysisOutcome,
   type RedLine,
 } from "./types.ts";
 
 // The model's reply could not be read as an analysis, so nothing is shown.
 export class AnalysisFailedError extends Error {
   name = "AnalysisFailedError";
+}
+
+// The model did not reply in time.
+export class AnalysisTimedOutError extends Error {
+  name = "AnalysisTimedOutError";
+}
+
+// Every red line is switched off, so there is nothing to look for. Analyse
+// refuses before calling the model: a clean result with an empty checklist
+// would claim the document was checked when it was not (ADR 0004).
+export class NothingToCheckError extends Error {
+  name = "NothingToCheckError";
 }
 
 const SYSTEM = `You read documents for someone who has been asked to sign them and has no legal training.
@@ -35,36 +51,91 @@ const serverLog: Log = (message) => console.warn(`[redline] ${message}`);
 // Two requests go to the model at the same time: one for the summary, one for
 // the flags. Every flag is checked against the document text before the
 // analysis is returned; see check-flags.ts.
+//
+// The outcome is all or nothing. If either request fails, takes longer than
+// `timeoutMs`, or sends a reply that cannot be read, the outcome is "failed"
+// and nothing from the run is returned, not even the summary.
 export async function analyse(
   input: AnalyseInput,
   model: ModelClient = openRouterClient,
   log: Log = serverLog,
-): Promise<Analysis> {
+  timeoutMs: number = MODEL_TIMEOUT_MS,
+): Promise<AnalysisOutcome> {
   const redLines = input.redLines.filter((line) => line.enabled);
-  const clauseTypes = redLines.map((line) => line.clauseType);
+  const checkedFor = redLines.map((line) => line.clauseType);
+  if (checkedFor.length === 0) {
+    throw new NothingToCheckError(
+      "Every red line is switched off, so there is nothing to check for.",
+    );
+  }
 
-  const [summaryReply, flagsReply] = await Promise.all([
-    model.complete({
-      system: SYSTEM,
-      prompt: summaryPrompt(input),
-      shape: SUMMARY_SHAPE,
-    }),
-    // With every red line switched off there is nothing to look for.
-    clauseTypes.length === 0
-      ? Promise.resolve(null)
-      : model.complete({
+  try {
+    const [summaryReply, flagsReply] = await withTimeout(timeoutMs, (signal) =>
+      Promise.all([
+        model.complete({
+          system: SYSTEM,
+          prompt: summaryPrompt(input),
+          shape: SUMMARY_SHAPE,
+          signal,
+        }),
+        model.complete({
           system: SYSTEM,
           prompt: flagsPrompt(input, redLines),
-          shape: flagsShape(clauseTypes),
+          shape: flagsShape(checkedFor),
+          signal,
         }),
-  ]);
+      ]),
+    );
 
-  const summary = readSummary(summaryReply);
-  const candidates = flagsReply === null ? [] : readFlagList(flagsReply);
-  const { flags, heldBack } = checkFlags(input.text, candidates, clauseTypes);
-  if (heldBack.length > 0) log(describeHeldBack(heldBack));
+    const summary = readSummary(summaryReply);
+    const candidates = readFlagList(flagsReply);
+    const { flags, heldBack } = checkFlags(input.text, candidates, checkedFor);
+    if (heldBack.length > 0) log(describeHeldBack(heldBack));
 
-  return { summary, flags, dropped: heldBack.length };
+    if (flags.length > 0) {
+      return { outcome: "flagged", summary, flags, dropped: heldBack.length, checkedFor };
+    }
+    if (heldBack.length > 0) {
+      return { outcome: "withheld", summary, withheld: heldBack.length };
+    }
+    return { outcome: "clean", summary, statement: cleanStatement(checkedFor), checkedFor };
+  } catch (error) {
+    const reason =
+      error instanceof Error ? `${error.name}: ${error.message}` : "Unknown error.";
+    log(`Analysis failed. ${reason}`);
+    return { outcome: "failed", reason };
+  }
+}
+
+function cleanStatement(checkedFor: readonly string[]): string {
+  const kinds = checkedFor.length === 1 ? "kind of clause" : "kinds of clause";
+  return `Redline looked for ${checkedFor.length} ${kinds} and found none of them in this document.`;
+}
+
+// Runs `work` with a signal that fires after `ms` milliseconds, and gives up
+// on it at that point. The signal also fires once `work` settles, so if one of
+// two requests fails, the other is cancelled instead of left running.
+async function withTimeout<T>(
+  ms: number,
+  work: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new AnalysisTimedOutError(
+        `The model did not reply within ${ms / 1000} seconds.`,
+      );
+      controller.abort(error);
+      reject(error);
+    }, ms);
+  });
+  try {
+    return await Promise.race([work(controller.signal), deadline]);
+  } finally {
+    clearTimeout(timer);
+    controller.abort();
+  }
 }
 
 function summaryPrompt(input: AnalyseInput): string {

@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { analyse, AnalysisFailedError } from "./analyse.ts";
+import { analyse as analyseOutcome } from "./analyse.ts";
 import { isHedged, isMarkedUncertain } from "./check-flags.ts";
 import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "./red-lines.ts";
 import { FLAGS_SHAPE_NAME } from "./reply-shapes.ts";
-import { SEVERITIES, type Analysis, type AnalyseInput } from "./types.ts";
+import { SEVERITIES, type AnalyseInput, type Flag } from "./types.ts";
 import { loadFixture } from "../../tests/support/fixtures.ts";
 import {
   flagsFrom,
@@ -28,11 +28,30 @@ const input: AnalyseInput = {
 
 const quiet = () => {};
 
+// What these tests look at: the flags shown and how many were held back.
+// A clean result shows none and held none back; a withheld one held them all
+// back. A failed analysis fails the test.
+type Checked = { flags: Flag[]; dropped: number };
+
+async function analyse(...args: Parameters<typeof analyseOutcome>): Promise<Checked> {
+  const result = await analyseOutcome(...args);
+  switch (result.outcome) {
+    case "flagged":
+      return { flags: result.flags, dropped: result.dropped };
+    case "clean":
+      return { flags: [], dropped: 0 };
+    case "withheld":
+      return { flags: [], dropped: result.withheld };
+    case "failed":
+      assert.fail(`the analysis failed: ${result.reason}`);
+  }
+}
+
 // Runs Analyse with the stub sending exactly these flags.
 function analyseWith(
   flags: FlagPayload[],
   options: { log?: (message: string) => void; input?: AnalyseInput } = {},
-): Promise<Analysis> {
+): Promise<Checked> {
   const model = stubModel(contract.sidecar, {
     builders: { [FLAGS_SHAPE_NAME]: () => ({ flags }) },
   });
@@ -372,6 +391,8 @@ test("fails rather than showing anything when the flags reply cannot be read", a
     stubModel(contract.sidecar, { builders: { [FLAGS_SHAPE_NAME]: () => ({ flags: "none" }) } }),
   ];
   for (const model of unreadable) {
-    await assert.rejects(analyse(input, model, quiet), AnalysisFailedError);
+    const result = await analyseOutcome(input, model, quiet);
+    assert.equal(result.outcome, "failed");
+    assert.ok(!("flags" in result), "a failed analysis carries no flags");
   }
 });

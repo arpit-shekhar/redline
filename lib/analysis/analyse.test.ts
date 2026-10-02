@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { analyse, AnalysisFailedError } from "./analyse.ts";
+import { analyse as analyseOutcome } from "./analyse.ts";
+import type { ModelClient } from "./model.ts";
 import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "./red-lines.ts";
+import type { AnalyseInput, AnalysisResult } from "./types.ts";
 import { loadFixture } from "../../tests/support/fixtures.ts";
 import { stubModel, summaryFrom } from "../../tests/support/stub-model.ts";
 
@@ -10,6 +12,22 @@ import { stubModel, summaryFrom } from "../../tests/support/stub-model.ts";
 // and the live model is never called.
 
 const contract = loadFixture("adhesion-contract");
+const quiet = () => {};
+
+// Analyse, for tests that expect it to finish. A failed outcome fails the test.
+async function analyse(input: AnalyseInput, model: ModelClient): Promise<AnalysisResult> {
+  const outcome = await analyseOutcome(input, model, quiet);
+  assert.notEqual(outcome.outcome, "failed", "the analysis failed");
+  return outcome as AnalysisResult;
+}
+
+// Analyse, for tests that expect it to fail.
+async function assertFails(model: ModelClient, message?: string) {
+  const outcome = await analyseOutcome(input, model, quiet);
+  assert.equal(outcome.outcome, "failed", message);
+  assert.ok(!("summary" in outcome), "a failed analysis carries no summary");
+  return outcome;
+}
 
 const input = {
   text: contract.text,
@@ -54,32 +72,29 @@ test("trims space around the summary", async () => {
 });
 
 test("fails rather than showing anything when the reply is not JSON", async () => {
-  await assert.rejects(
-    analyse(
-      input,
-      stubModel(contract.sidecar, { rawReply: "Here is your summary: it is a contract." }),
-    ),
-    AnalysisFailedError,
+  const failed = await assertFails(
+    stubModel(contract.sidecar, { rawReply: "Here is your summary: it is a contract." }),
   );
+  assert.match(failed.reason, /AnalysisFailedError/);
 });
 
 test("fails when the reply has no summary", async () => {
   for (const payload of [{}, { summary: "   " }, { summary: 42 }, null, ["a"]]) {
-    await assert.rejects(
-      analyse(input, stubModel(contract.sidecar, { builders: { summary: () => payload } })),
-      AnalysisFailedError,
+    await assertFails(
+      stubModel(contract.sidecar, { builders: { summary: () => payload } }),
       `payload ${JSON.stringify(payload)} should be refused`,
     );
   }
 });
 
-test("passes on a failed model call instead of returning a summary", async () => {
+test("reports a failed model call as a failure instead of returning a summary", async () => {
   const failing = {
     async complete(): Promise<string> {
       throw new Error("network down");
     },
   };
-  await assert.rejects(analyse(input, failing), /network down/);
+  const failed = await assertFails(failing);
+  assert.match(failed.reason, /network down/);
 });
 
 test("summarises a document with no planted clauses", async () => {
