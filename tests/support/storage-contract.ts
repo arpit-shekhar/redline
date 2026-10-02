@@ -291,7 +291,7 @@ function ok(change: Change): RedLineSettings {
 
 // A test document with the analysis Analyse returns for it, using the stub
 // model built from the document's answer key.
-async function analysedFixture(name: FixtureName, analysedAt: Date): Promise<NewDocument> {
+export async function analysedFixture(name: FixtureName, analysedAt: Date): Promise<NewDocument> {
   const fixture = loadFixture(name);
   const outcome = await analyse(
     {

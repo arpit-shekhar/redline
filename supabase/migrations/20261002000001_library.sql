@@ -2,7 +2,8 @@
 --
 -- Each row holds the exact text that was analysed and the analysis Redline
 -- returned for it, as JSON. Deleting a row removes both. Rows are never
--- edited, so there is no update rule.
+-- edited, so nobody may change them. The matching rule for changes is in
+-- 20261002000003_documents_update_rule.sql.
 --
 -- Row level security (rules the database checks on every row) is on: a
 -- signed-in person can read, add and delete only rows whose user_id is their

@@ -108,7 +108,7 @@ function Standing({
     return (
       <p className={line}>
         You need an account to change these.{" "}
-        <Link href="/sign-in" className="font-medium text-pen underline">
+        <Link href="/sign-in?next=/red-lines" className="font-medium text-pen underline">
           Sign in
         </Link>{" "}
         and your changes apply to every document you check after that. Until then, Redline
