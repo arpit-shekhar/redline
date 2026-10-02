@@ -2,11 +2,19 @@
 
 import { analyse } from "@/lib/analysis/analyse.ts";
 import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "@/lib/analysis/red-lines.ts";
-import { isDocumentType } from "@/lib/analysis/types.ts";
+import { isDocumentType, type Flag } from "@/lib/analysis/types.ts";
 
 export type AnalyseState =
   | { status: "idle" }
-  | { status: "done"; summary: string }
+  | {
+      status: "done";
+      // The exact text that was analysed. Each flag's source location points
+      // into it, so the page draws the document from this, not from the box.
+      text: string;
+      summary: string;
+      flags: Flag[];
+      dropped: number;
+    }
   | { status: "error"; message: string };
 
 export async function analyseDocument(
@@ -30,7 +38,7 @@ export async function analyseDocument(
       redLines: DEFAULT_RED_LINES,
       leverage: DEFAULT_LEVERAGE,
     });
-    return { status: "done", summary: analysis.summary };
+    return { status: "done", text, ...analysis };
   } catch (error) {
     // The details stay in the server log. Never log the document text.
     console.error("[redline] Analysis failed:", error);

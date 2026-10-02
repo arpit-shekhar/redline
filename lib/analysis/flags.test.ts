@@ -1,0 +1,377 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { analyse, AnalysisFailedError } from "./analyse.ts";
+import { isHedged, isMarkedUncertain } from "./check-flags.ts";
+import { DEFAULT_LEVERAGE, DEFAULT_RED_LINES } from "./red-lines.ts";
+import { FLAGS_SHAPE_NAME } from "./reply-shapes.ts";
+import { SEVERITIES, type Analysis, type AnalyseInput } from "./types.ts";
+import { loadFixture } from "../../tests/support/fixtures.ts";
+import {
+  flagsFrom,
+  stubModel,
+  type FlagPayload,
+} from "../../tests/support/stub-model.ts";
+
+// Flags are tested through Analyse, with only the model stubbed. The stub
+// sends flags built from the answer key of the written test contract; some
+// tests change one flag first to see what the check does with it.
+
+const contract = loadFixture("adhesion-contract");
+const planted = contract.sidecar.planted;
+
+const input: AnalyseInput = {
+  text: contract.text,
+  documentType: contract.sidecar.documentType,
+  redLines: DEFAULT_RED_LINES,
+  leverage: DEFAULT_LEVERAGE,
+};
+
+const quiet = () => {};
+
+// Runs Analyse with the stub sending exactly these flags.
+function analyseWith(
+  flags: FlagPayload[],
+  options: { log?: (message: string) => void; input?: AnalyseInput } = {},
+): Promise<Analysis> {
+  const model = stubModel(contract.sidecar, {
+    builders: { [FLAGS_SHAPE_NAME]: () => ({ flags }) },
+  });
+  return analyse(options.input ?? input, model, options.log ?? quiet);
+}
+
+// The answer key's flags with one of them changed.
+function withChange(
+  clauseType: string,
+  change: (flag: FlagPayload) => Partial<FlagPayload>,
+  index = 0,
+): FlagPayload[] {
+  let seen = -1;
+  return flagsFrom(contract.sidecar).map((flag) => {
+    if (flag.clauseType !== clauseType || ++seen !== index) return flag;
+    return { ...flag, ...change(flag) };
+  });
+}
+
+const RENEWAL = "Automatic renewal";
+const LATE_FEES = "Late fees and penalties";
+const GUARANTEE = "Personal guarantees";
+const ARBITRATION = "Forced arbitration and class-action waivers";
+
+test("returns a flag for every planted clause, with each part in its own field", async () => {
+  const analysis = await analyse(input, stubModel(contract.sidecar), quiet);
+
+  assert.equal(analysis.dropped, 0);
+  assert.equal(analysis.flags.length, planted.length);
+  for (const clause of planted) {
+    const flag = analysis.flags.find((f) => f.sourceSentence === clause.sourceSentence);
+    assert.ok(flag, `missing: ${clause.clauseType}`);
+    assert.deepEqual(Object.keys(flag).sort(), [
+      "clauseType",
+      "escapabilityReasoning",
+      "outcomeClaim",
+      "severity",
+      "sourceLocation",
+      "sourceSentence",
+      "textClaim",
+    ]);
+    assert.equal(flag.clauseType, clause.clauseType);
+    assert.equal(flag.severity, clause.expectedSeverity);
+    assert.equal(flag.textClaim, clause.textClaim);
+    assert.equal(flag.outcomeClaim, clause.outcomeClaim);
+    assert.equal(flag.escapabilityReasoning, clause.escapabilityReasoning);
+  }
+});
+
+test("every source sentence is in the document, at the location the flag gives", async () => {
+  const analysis = await analyse(input, stubModel(contract.sidecar), quiet);
+
+  for (const flag of analysis.flags) {
+    assert.ok(contract.text.includes(flag.sourceSentence), flag.clauseType);
+    const { start, end } = flag.sourceLocation;
+    assert.equal(contract.text.slice(start, end), flag.sourceSentence);
+  }
+});
+
+test("every outcome claim is marked uncertain and no text claim is", async () => {
+  const analysis = await analyse(input, stubModel(contract.sidecar), quiet);
+
+  assert.ok(analysis.flags.length > 0);
+  for (const flag of analysis.flags) {
+    assert.ok(isMarkedUncertain(flag.outcomeClaim), flag.outcomeClaim);
+    assert.ok(!isHedged(flag.textClaim), flag.textClaim);
+  }
+});
+
+test("a flag whose outcome claim is stated as certain is held back", async () => {
+  const analysis = await analyseWith(
+    withChange(RENEWAL, () => ({
+      outcomeClaim: "You will be locked in for three more years at higher prices.",
+    })),
+  );
+
+  assert.equal(analysis.dropped, 1);
+  assert.ok(!analysis.flags.some((f) => f.clauseType === RENEWAL));
+});
+
+test("a flag whose text claim hedges is held back", async () => {
+  const analysis = await analyseWith(
+    withChange(GUARANTEE, () => ({
+      textClaim: "The person who signs might have to pay the business's debts.",
+    })),
+  );
+
+  assert.equal(analysis.dropped, 1);
+  assert.ok(!analysis.flags.some((f) => f.clauseType === GUARANTEE));
+});
+
+test("severity is only ever must-change or worth-raising", async () => {
+  const good = await analyse(input, stubModel(contract.sidecar), quiet);
+  for (const flag of good.flags) assert.ok(SEVERITIES.includes(flag.severity));
+
+  for (const severity of ["high", "critical", "Must-change", ""]) {
+    const analysis = await analyseWith(withChange(LATE_FEES, () => ({ severity })));
+    assert.equal(analysis.dropped, 1, `severity "${severity}" should be held back`);
+    assert.equal(analysis.flags.length, planted.length - 1);
+    for (const flag of analysis.flags) assert.ok(SEVERITIES.includes(flag.severity));
+  }
+});
+
+test("must-change flags come first, then worth-raising, each in document order", async () => {
+  const analysis = await analyse(input, stubModel(contract.sidecar), quiet);
+
+  // Expected order worked out by hand from the test contract: sections 3.2,
+  // 5.1 and 9.2 are must-change; 4.3, 8.1 and 8.2 are worth-raising.
+  const position = (sentence: string) => contract.text.indexOf(sentence);
+  const expected = [...planted]
+    .sort(
+      (a, b) =>
+        (a.expectedSeverity === "must-change" ? 0 : 1) -
+          (b.expectedSeverity === "must-change" ? 0 : 1) ||
+        position(a.sourceSentence) - position(b.sourceSentence),
+    )
+    .map((c) => c.sourceSentence);
+  assert.deepEqual(
+    analysis.flags.map((f) => f.sourceSentence),
+    expected,
+  );
+  assert.deepEqual(
+    analysis.flags.map((f) => f.clauseType),
+    [
+      RENEWAL,
+      GUARANTEE,
+      ARBITRATION,
+      LATE_FEES,
+      "Indemnity and liability caps",
+      "Indemnity and liability caps",
+    ],
+  );
+});
+
+test("the same input gives the same order every run, whatever order the model used", async () => {
+  const payloads = flagsFrom(contract.sidecar);
+  const first = await analyseWith(payloads);
+  const orders = [
+    payloads,
+    [...payloads].reverse(),
+    [payloads[3], payloads[0], payloads[5], payloads[1], payloads[4], payloads[2]],
+  ];
+  for (const order of orders) {
+    for (let run = 0; run < 3; run++) {
+      assert.deepEqual((await analyseWith(order)).flags, first.flags);
+    }
+  }
+});
+
+test("a quote with its spelling mistake silently corrected is held back and counted", async () => {
+  const withTypo = planted.find((c) => c.typoNote)!;
+  const analysis = await analyseWith(
+    withChange(withTypo.clauseType, () => ({
+      sourceSentence: withTypo.typoNote!.corrected,
+    })),
+  );
+
+  assert.equal(analysis.dropped, 1);
+  assert.equal(analysis.flags.length, planted.length - 1);
+  assert.ok(!analysis.flags.some((f) => f.clauseType === withTypo.clauseType));
+});
+
+test("a quote with straight quote marks where the document has curly ones passes", async () => {
+  const straighten = (text: string) =>
+    text.replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
+  const changed = withChange(RENEWAL, (f) => ({ sourceSentence: straighten(f.sourceSentence) }))
+    .map((f) =>
+      f.clauseType === GUARANTEE ? { ...f, sourceSentence: straighten(f.sourceSentence) } : f,
+    );
+  assert.notEqual(changed[0].sourceSentence, planted[0].sourceSentence, "the change took");
+
+  const analysis = await analyseWith(changed);
+
+  assert.equal(analysis.dropped, 0);
+  // The flag shows the document's own sentence, curly quotes and all.
+  for (const type of [RENEWAL, GUARANTEE]) {
+    const flag = analysis.flags.find((f) => f.clauseType === type)!;
+    const clause = planted.find((c) => c.clauseType === type)!;
+    assert.equal(flag.sourceSentence, clause.sourceSentence);
+  }
+});
+
+test("a quote whose spaces and line breaks differ from the document passes", async () => {
+  const arbitration = planted.find((c) => c.clauseType === ARBITRATION)!;
+  assert.ok(arbitration.sourceSentence.includes("\n"));
+
+  const analysis = await analyseWith(
+    withChange(ARBITRATION, (f) => ({
+      sourceSentence: `  ${f.sourceSentence.replace("\n", " ").replace(/, /g, ",   ")}\t`,
+    })),
+  );
+
+  assert.equal(analysis.dropped, 0);
+  const flag = analysis.flags.find((f) => f.clauseType === ARBITRATION)!;
+  assert.equal(flag.sourceSentence, arbitration.sourceSentence);
+  const { start, end } = flag.sourceLocation;
+  assert.equal(contract.text.slice(start, end), arbitration.sourceSentence);
+});
+
+test("an invented sentence is held back", async () => {
+  const analysis = await analyseWith([
+    ...flagsFrom(contract.sidecar),
+    {
+      clauseType: "Non-competes",
+      severity: "must-change",
+      sourceSentence:
+        "For two years after this Agreement ends, you will not use any other point-of-sale provider.",
+      textClaim: "You cannot switch to another provider for two years.",
+      outcomeClaim: "You could be stuck with Kestrelmoor after you leave.",
+      escapabilityReasoning: "It binds you after the agreement ends.",
+    },
+  ]);
+
+  assert.equal(analysis.dropped, 1);
+  assert.equal(analysis.flags.length, planted.length);
+  assert.ok(!analysis.flags.some((f) => f.clauseType === "Non-competes"));
+});
+
+test("letter case and punctuation are not forgiven", async () => {
+  const changes = [
+    (s: string) => s.toLowerCase(),
+    (s: string) => s.replace("Initial Term,", "Initial Term"),
+    (s: string) => s.replace("(36)", "36"),
+  ];
+  for (const change of changes) {
+    const analysis = await analyseWith(
+      withChange(RENEWAL, (f) => ({ sourceSentence: change(f.sourceSentence) })),
+    );
+    assert.equal(analysis.dropped, 1);
+    assert.ok(!analysis.flags.some((f) => f.clauseType === RENEWAL));
+  }
+});
+
+test("a flag of a clause type that was not asked for is held back", async () => {
+  const analysis = await analyseWith(
+    withChange(RENEWAL, () => ({ clauseType: "Hidden fees" })),
+  );
+  assert.equal(analysis.dropped, 1);
+  assert.equal(analysis.flags.length, planted.length - 1);
+});
+
+test("only switched-on red lines are looked for", async () => {
+  const redLines = DEFAULT_RED_LINES.map((line) =>
+    line.clauseType === RENEWAL ? { ...line, enabled: false } : line,
+  );
+  const model = stubModel(contract.sidecar);
+  const analysis = await analyse({ ...input, redLines }, model, quiet);
+
+  const request = model.requests.find((r) => r.shape.name === FLAGS_SHAPE_NAME)!;
+  const asked = JSON.stringify(request.shape.schema);
+  assert.ok(!asked.includes(RENEWAL));
+  assert.ok(asked.includes(GUARANTEE));
+  // The stub still sends a renewal flag; it is not shown.
+  assert.ok(!analysis.flags.some((f) => f.clauseType === RENEWAL));
+  assert.equal(analysis.dropped, 1);
+});
+
+test("the eight default red lines are what a first analysis looks for", async () => {
+  const model = stubModel(contract.sidecar);
+  await analyse(input, model, quiet);
+
+  const request = model.requests.find((r) => r.shape.name === FLAGS_SHAPE_NAME)!;
+  const asked = JSON.stringify(request.shape.schema);
+  assert.equal(DEFAULT_RED_LINES.length, 8);
+  for (const line of DEFAULT_RED_LINES) assert.ok(asked.includes(line.clauseType));
+});
+
+test("a flag with a part missing or blank is held back", async () => {
+  const missing = flagsFrom(contract.sidecar).map((flag, index) => {
+    if (index !== 1) return flag;
+    const partial: Partial<FlagPayload> = { ...flag };
+    delete partial.escapabilityReasoning;
+    return partial as FlagPayload;
+  });
+  assert.equal((await analyseWith(missing)).dropped, 1);
+
+  const blank = withChange(GUARANTEE, () => ({ textClaim: "   " }));
+  assert.equal((await analyseWith(blank)).dropped, 1);
+});
+
+test("the same flag sent twice is shown once and nothing is counted as held back", async () => {
+  const payloads = flagsFrom(contract.sidecar);
+  const analysis = await analyseWith([...payloads, payloads[0]]);
+  assert.equal(analysis.flags.length, planted.length);
+  assert.equal(analysis.dropped, 0);
+});
+
+test("held-back flags are logged by count and clause type, never with document text", async () => {
+  const withTypo = planted.find((c) => c.typoNote)!;
+  const messages: string[] = [];
+  const invented = "You will pay a $500 fee to end this Agreement early.";
+
+  await analyseWith(
+    [
+      ...withChange(withTypo.clauseType, () => ({
+        sourceSentence: withTypo.typoNote!.corrected,
+      })),
+      { ...flagsFrom(contract.sidecar)[0], sourceSentence: invented },
+    ],
+    { log: (message) => messages.push(message) },
+  );
+
+  assert.equal(messages.length, 1);
+  const [message] = messages;
+  assert.match(message, /\b2 flags\b/);
+  assert.ok(message.includes(withTypo.clauseType));
+  assert.ok(message.includes(RENEWAL));
+  assert.ok(!message.includes("Fee Sch"), "the quote leaked into the log");
+  assert.ok(!message.includes("$500"), "the invented quote leaked into the log");
+  for (const clause of planted) {
+    assert.ok(!message.includes(clause.sourceSentence.slice(0, 30)));
+    assert.ok(!message.includes(clause.textClaim.slice(0, 30)));
+  }
+});
+
+test("nothing is logged when every flag passes", async () => {
+  const messages: string[] = [];
+  await analyse(input, stubModel(contract.sidecar), (m) => messages.push(m));
+  assert.deepEqual(messages, []);
+});
+
+test("a document with nothing planted gets no flags and nothing held back", async () => {
+  const clean = loadFixture("clean-document");
+  const analysis = await analyse(
+    { ...input, text: clean.text, documentType: clean.sidecar.documentType },
+    stubModel(clean.sidecar),
+    quiet,
+  );
+  assert.deepEqual(analysis.flags, []);
+  assert.equal(analysis.dropped, 0);
+});
+
+test("fails rather than showing anything when the flags reply cannot be read", async () => {
+  const unreadable = [
+    stubModel(contract.sidecar, { rawReplies: { [FLAGS_SHAPE_NAME]: "Here are the flags." } }),
+    stubModel(contract.sidecar, { builders: { [FLAGS_SHAPE_NAME]: () => ({}) } }),
+    stubModel(contract.sidecar, { builders: { [FLAGS_SHAPE_NAME]: () => ({ flags: "none" }) } }),
+  ];
+  for (const model of unreadable) {
+    await assert.rejects(analyse(input, model, quiet), AnalysisFailedError);
+  }
+});

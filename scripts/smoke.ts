@@ -1,5 +1,6 @@
 // A live check of the whole analysis path: runs the test contract through the
-// real Analyse with the real OpenRouter client and prints what comes back.
+// real Analyse with the real OpenRouter client and prints what comes back:
+// the summary, every flag that passed the checks, and how many were held back.
 // It costs a real model call. It never falls back to a stub.
 //
 // Run with: npm run smoke
@@ -37,6 +38,15 @@ try {
   });
   console.log("Summary\n");
   console.log(analysis.summary);
+
+  console.log(`\nFlags (${analysis.flags.length})\n`);
+  analysis.flags.forEach((flag, index) => {
+    console.log(`${index + 1}. ${flag.severity} | ${flag.clauseType}`);
+    console.log(`   "${flag.sourceSentence.replace(/\s+/g, " ")}"`);
+  });
+  if (analysis.flags.length === 0) console.log("None.");
+
+  console.log(`\nHeld back because they failed the checks: ${analysis.dropped}`);
 } catch (error) {
   console.error("Smoke check failed:");
   console.error(error instanceof Error ? `${error.name}: ${error.message}` : error);

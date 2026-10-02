@@ -24,21 +24,24 @@ test("returns the summary from the model's reply", async () => {
   assert.equal(analysis.summary, summaryFrom(contract.sidecar));
 });
 
-test("sends the whole document text to the model", async () => {
+test("sends the whole document text with every request to the model", async () => {
   const model = stubModel(contract.sidecar);
   await analyse(input, model);
 
-  assert.equal(model.requests.length, 1);
-  assert.ok(model.requests[0].prompt.includes(contract.text));
+  assert.ok(model.requests.length > 0);
+  for (const request of model.requests) {
+    assert.ok(request.prompt.includes(contract.text));
+  }
 });
 
-test("asks the model for a reply in a fixed JSON shape", async () => {
+test("asks the model for every reply in a fixed JSON shape", async () => {
   const model = stubModel(contract.sidecar);
   await analyse(input, model);
 
-  const { shape } = model.requests[0];
-  assert.equal(typeof shape.name, "string");
-  assert.equal(shape.schema.type, "object");
+  for (const { shape } of model.requests) {
+    assert.equal(typeof shape.name, "string");
+    assert.equal(shape.schema.type, "object");
+  }
 });
 
 test("trims space around the summary", async () => {
