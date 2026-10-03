@@ -25,7 +25,7 @@ something not on the list looks like the obvious next step, ask me first.
 - The uploaded file is parsed in the browser. Only its extracted text is stored.
 - Every risk flag cites the exact sentence it came from. A flag whose source
   sentence cannot be shown is a bug, not a limitation to work around.
-- OpenRouter, model `anthropic/claude-sonnet-5`, pinned in one module. Check the
+- OpenRouter, model `z-ai/glm-5.3-flash`, pinned in one module. Check the
   name against OpenRouter's live list on first call. Never switch without asking.
 - The decision records in `docs/adr/` are binding, including 0002 although it
   says `proposed`. Where the PRD or spec disagrees with one, the record wins.
