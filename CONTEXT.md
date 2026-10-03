@@ -78,6 +78,13 @@ A statement about what a clause might do to the user in the world. Depends on
 facts the document does not contain, and is therefore always marked uncertain.
 _Avoid_: prediction, risk, consequence, impact
 
+**Escapability reasoning**:
+Why a flag has its severity. It is made of text claims about what the document
+says, or leaves out, about getting out of the clause, stated plainly, and
+outcome claims about what that could mean for the user, marked uncertain. It
+never states the user's future as fact.
+_Avoid_: rationale, justification, explanation
+
 **Clean result**:
 What a document with no flags returns: a statement that it is clean, plus the
 list of what was checked for and not found. Never an empty response.
