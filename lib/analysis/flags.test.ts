@@ -170,6 +170,29 @@ test("the flags request asks the model to weigh the document's exit clause befor
   assert.match(request.prompt, /whole document/i);
 });
 
+// The reasoning stated the reader's future as fact, such as "once signed there
+// is no route to court", while the outcome claim above it said "could"
+// (FINDINGS.md, finding 2). This checks the instruction is sent; whether the
+// model follows it is measured by the eval on tests/fixtures/certain-outcomes/.
+test("the flags request asks for escapability reasoning that marks what could happen to the reader as uncertain", async () => {
+  const model = stubModel(contract.sidecar);
+  await analyse(input, model, quiet);
+
+  const request = model.requests.find(({ shape }) => shape.name === FLAGS_SHAPE_NAME);
+  assert.ok(request, "a flags request was sent");
+  const reasoning = request.prompt
+    .split("\n")
+    .find((line) => line.startsWith("- escapabilityReasoning:"));
+  assert.ok(reasoning, "the request describes the escapability reasoning");
+  assert.match(reasoning, /may, might or could/);
+  assert.match(reasoning, /as fact/i);
+  assert.match(reasoning, /court/i);
+  assert.match(
+    reasoning,
+    /Never say there is no way out when the document has an exit clause the person can use\./,
+  );
+});
+
 test("must-change flags come first, then worth-raising, each in document order", async () => {
   const analysis = await analyse(input, stubModel(contract.sidecar), quiet);
 

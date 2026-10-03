@@ -1,0 +1,11 @@
+{
+  "document": "one-line-lease.txt",
+  "documentType": "lease",
+  "planted": [
+    {
+      "clauseType": "Security deposit withholding",
+      "sourceSentence": "The tenant forfeits the whole deposit.",
+      "expectedSeverity": "must-change"
+    }
+  ]
+}
