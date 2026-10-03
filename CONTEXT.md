@@ -30,6 +30,14 @@ How hard it is to get out of an obligation once signed, without paying or
 waiting. The primary axis for severity — see ADR 0003.
 _Avoid_: exit cost, lock-in, stickiness
 
+**Exit clause**:
+A clause that lets a party end the whole agreement, for example "either party
+may end this agreement with 14 days of written notice by email." It bears on
+escapability but does not settle it: ending the deal may not release the user
+from an obligation that already applies, such as waiting to be paid for work
+delivered, or one that starts when the deal ends, such as a non-compete.
+_Avoid_: termination right, way out, escape hatch
+
 **Must-change flag**:
 A flag the user should not sign without changing. Reserved for clauses the
 analysis is near-certain about.
