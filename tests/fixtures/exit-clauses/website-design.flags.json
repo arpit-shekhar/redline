@@ -1,0 +1,16 @@
+{
+  "document": "website-design.txt",
+  "documentType": "freelance-agreement",
+  "planted": [
+    {
+      "clauseType": "Weak freelance payment terms",
+      "sourceSentence": "The Client will pay each invoice within 75 days of receiving it.",
+      "expectedSeverity": "must-change"
+    },
+    {
+      "clauseType": "Non-competes",
+      "sourceSentence": "For 18 months after this agreement ends, the Designer will not design websites for any other bakery in the same city.",
+      "expectedSeverity": "must-change"
+    }
+  ]
+}

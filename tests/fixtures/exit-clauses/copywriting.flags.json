@@ -1,0 +1,11 @@
+{
+  "document": "copywriting.txt",
+  "documentType": "freelance-agreement",
+  "planted": [
+    {
+      "clauseType": "Weak freelance payment terms",
+      "sourceSentence": "The Client will pay the Writer's invoice within 90 days of receiving it.",
+      "expectedSeverity": "must-change"
+    }
+  ]
+}

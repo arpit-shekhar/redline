@@ -265,13 +265,15 @@ function flagsPrompt(
 Find every clause in it that could hurt the person asked to sign it, of these types only:
 ${list}
 
+Before you judge any severity, read the whole document for an exit clause: a clause that lets the person end the whole agreement, for example by giving notice. Note who may use it and on what conditions. Count only exit clauses the document actually contains.
+
 For each one, give:
 - clauseType: the type from the list above, written exactly as it appears there.
 - sourceSentence: the one sentence the clause comes from, copied character for character from the document. Keep its spelling mistakes, capitals, punctuation and quote marks as they are. Do not shorten it, join it to another sentence or fix anything in it.
-- severity: "must-change" or "worth-raising". Judge it by how hard the clause is to get out of once signed, without paying or waiting, not by how much money is involved. Each type above shows the severity its flags start from. A type that starts at worth-raising is always "worth-raising". A type that starts at must-change stays "must-change" only when you are near-certain this clause leaves almost no way out; when in doubt, use "worth-raising".
+- severity: "must-change" or "worth-raising". Judge it by how hard the clause is to get out of once signed, without paying or waiting, not by how much money is involved. Each type above shows the severity its flags start from. A type that starts at worth-raising is always "worth-raising". A type that starts at must-change stays "must-change" only when you are near-certain this clause leaves almost no way out; when in doubt, use "worth-raising". If an exit clause the person can use ends, or might end, this clause's obligation, you are not near-certain there is no way out, so use "worth-raising". Ending the agreement does not always end the obligation: payment for work already delivered is still due on the clause's terms, and some obligations start or continue after the agreement ends.
 - textClaim: what the sentence says, stated plainly. No hedging: do not use might, possibly, perhaps, probably, likely or maybe.
 - outcomeClaim: what the clause might do to the person. It depends on facts the document does not contain, so it must say may, might or could.
-- escapabilityReasoning: why it gets that severity, in terms of how hard it is to get out of.
+- escapabilityReasoning: why it gets that severity, in terms of how hard it is to get out of. If the document has an exit clause, name it and say whether ending the agreement gets the person out of this clause's obligation. Never say there is no way out when the document has an exit clause the person can use.
 - counterOffer: one counter-offer the person can send to the other side about this clause. Say plainly what should change and give the replacement wording for the clause. Address this clause only. Write one version, in the tone below.
 
 Tone for every counterOffer: ${TONE_INSTRUCTIONS[tone]}

@@ -156,6 +156,20 @@ test("severity is only ever must-change or worth-raising", async () => {
   }
 });
 
+// A flag judged on its source sentence alone told readers there was no way
+// out when another clause let either side end the agreement (FINDINGS.md,
+// finding 1). This checks the instruction is sent; whether the model follows
+// it is measured by the eval on tests/fixtures/exit-clauses/.
+test("the flags request asks the model to weigh the document's exit clause before judging severity", async () => {
+  const model = stubModel(contract.sidecar);
+  await analyse(input, model, quiet);
+
+  const request = model.requests.find(({ shape }) => shape.name === FLAGS_SHAPE_NAME);
+  assert.ok(request, "a flags request was sent");
+  assert.match(request.prompt, /exit clause/i);
+  assert.match(request.prompt, /whole document/i);
+});
+
 test("must-change flags come first, then worth-raising, each in document order", async () => {
   const analysis = await analyse(input, stubModel(contract.sidecar), quiet);
 

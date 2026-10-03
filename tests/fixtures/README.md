@@ -22,6 +22,15 @@ up, and none of the text comes from a real person's contract.
   test fails if the files kept here no longer match a fresh build.
 - `scanned-page.pdf` and `empty.docx`: files with no text in them, standing
   in for scans. Made by the same script.
+- `exit-clauses/`: a separate review set of three short freelance agreements,
+  Documents C, D and E from FINDINGS.md, copied word for word. Each has an
+  exit clause letting either side end the agreement by email. The answer keys
+  expect the automatic renewal in `translation-renewal.txt` to be
+  worth-raising, because the exit clause removes the trap. The payment terms
+  and the non-compete stay must-change, because ending the agreement does not
+  end them. Run it with `npm run evals -- tests/fixtures/exit-clauses`. The
+  offline tests read only the files directly in this folder, so they do not
+  see these.
 - `.gitattributes`: stops git from changing line endings in these files. One
   planted sentence runs across a line break, and the answer key records that
   break exactly.
