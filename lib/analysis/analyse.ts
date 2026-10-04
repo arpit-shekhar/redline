@@ -1,4 +1,10 @@
-import { checkFlags, describeHeldBack, rankFlags, type HeldBack } from "./check-flags.ts";
+import {
+  checkFlags,
+  compareFlags,
+  describeHeldBack,
+  rankFlags,
+  type HeldBack,
+} from "./check-flags.ts";
 import { isTooLong, MAX_DOCUMENT_CHARACTERS } from "./limits.ts";
 import {
   MODEL_TIMEOUT_MS,
@@ -179,7 +185,43 @@ function withinSeverity(flags: readonly Flag[], redLines: readonly RedLine[]): F
       ? { ...flag, severity: "worth-raising" as const }
       : flag,
   );
-  return rankFlags(capped);
+  return rankFlags(onePerSentence(capped, redLines));
+}
+
+// One flag per source sentence (CONTEXT.md, "Flag"). Flags whose sentences
+// are the same, or where one lies inside the other, become one flag, so a
+// sentence that crosses two red lines counts once. The flag kept is the one
+// with the higher severity; on a tie, the reader's own red line, because
+// that flag is named in the reader's words. The others add only their red
+// line's name. Runs after the severity ceilings, so a capped flag cannot win
+// on a severity its red line does not allow.
+function onePerSentence(flags: readonly Flag[], redLines: readonly RedLine[]): Flag[] {
+  const own = new Set(redLines.filter((line) => line.ownWords).map((line) => line.clauseType));
+  const preferred = [...flags].sort(
+    (a, b) =>
+      Number(b.severity === "must-change") - Number(a.severity === "must-change") ||
+      Number(own.has(b.clauseType)) - Number(own.has(a.clauseType)) ||
+      compareFlags(a, b),
+  );
+  const kept: Flag[] = [];
+  for (const flag of preferred) {
+    const same = kept.find((k) => sameSentence(k, flag));
+    if (!same) {
+      kept.push({ ...flag });
+      continue;
+    }
+    if (same.clauseType === flag.clauseType || same.alsoCrosses?.includes(flag.clauseType)) continue;
+    same.alsoCrosses = [...(same.alsoCrosses ?? []), flag.clauseType];
+  }
+  return kept;
+}
+
+// Two flags are on the same sentence when one's location lies inside the
+// other's.
+function sameSentence(a: Flag, b: Flag): boolean {
+  const inside = (x: Flag, y: Flag) =>
+    x.sourceLocation.start >= y.sourceLocation.start && x.sourceLocation.end <= y.sourceLocation.end;
+  return inside(a, b) || inside(b, a);
 }
 
 // The server log names default clause types, but not the words of a red

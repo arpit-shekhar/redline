@@ -102,6 +102,11 @@ export type Flag = {
   // Replacement wording for this clause that the reader can send to the
   // other side, in the tone their leverage calls for. Never empty.
   counterOffer: string;
+  // The other red lines this sentence crosses. There is one flag per source
+  // sentence, so a sentence that crosses several red lines carries the rest
+  // here. Missing when it crosses only this one, and on library copies saved
+  // before flags were merged.
+  alsoCrosses?: string[];
 };
 
 // What Analyse returns. Exactly one of four outcomes, so a screen has to say

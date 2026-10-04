@@ -153,9 +153,16 @@ test("a fair document counts its must-change flags and not its worth-raising one
     escapabilityReasoning: "Testing only.",
     counterOffer: "Either party may end this agreement by giving 30 days' written notice.",
   };
+  // On two sentences: flags on one sentence become one flag.
   const flags = [
     { ...base, clauseType: "Automatic renewal", severity: "must-change" },
-    { ...base, clauseType: "Weak freelance payment terms", severity: "worth-raising" },
+    {
+      ...base,
+      sourceSentence:
+        "Any extra work agreed in writing under section 1.3 is paid at $60 per hour and invoiced with the next part of the fee.",
+      clauseType: "Weak freelance payment terms",
+      severity: "worth-raising",
+    },
   ];
 
   const stayedClean = scoreDocument(

@@ -383,6 +383,11 @@ function FlagNote({
         </span>{" "}
         <span className="font-semibold">{flag.clauseType}</span>
       </p>
+      {flag.alsoCrosses && flag.alsoCrosses.length > 0 && (
+        <p className="-mt-2 text-sm leading-snug text-ink-soft">
+          This sentence also crosses: {flag.alsoCrosses.join("; ")}
+        </p>
+      )}
       <div>
         <p className="tab-type text-xs text-ink-soft">What it says</p>
         <p className="mt-1 leading-relaxed text-ink">{flag.textClaim}</p>

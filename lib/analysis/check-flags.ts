@@ -254,12 +254,15 @@ const SEVERITY_ORDER: Record<Severity, number> = {
 // document. Ties are broken by where it ends and then by clause type, so the
 // same flags always come out in the same order whatever order they arrived in.
 export function rankFlags(flags: readonly Flag[]): Flag[] {
-  return [...flags].sort(
-    (a, b) =>
-      SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] ||
-      a.sourceLocation.start - b.sourceLocation.start ||
-      a.sourceLocation.end - b.sourceLocation.end ||
-      (a.clauseType < b.clauseType ? -1 : a.clauseType > b.clauseType ? 1 : 0),
+  return [...flags].sort(compareFlags);
+}
+
+export function compareFlags(a: Flag, b: Flag): number {
+  return (
+    SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] ||
+    a.sourceLocation.start - b.sourceLocation.start ||
+    a.sourceLocation.end - b.sourceLocation.end ||
+    (a.clauseType < b.clauseType ? -1 : a.clauseType > b.clauseType ? 1 : 0)
   );
 }
 
