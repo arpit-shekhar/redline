@@ -3,6 +3,7 @@
 import {
   startTransition,
   useActionState,
+  useEffect,
   useRef,
   useState,
   type DragEvent,
@@ -83,6 +84,14 @@ export function AnalyseForm({
   const [dragging, setDragging] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
   const busy = pending || readingFile;
+  // Set the moment a document is sent, before React marks the request as
+  // running. Two presses in the same instant both get past `busy`, which
+  // ran two analyses and saved two library copies. This lets only the first
+  // through until that analysis is over.
+  const sending = useRef(false);
+  useEffect(() => {
+    if (!pending) sending.current = false;
+  }, [pending]);
 
   const readFile = async (file: File) => {
     setReadingFile(true);
@@ -105,6 +114,8 @@ export function AnalyseForm({
   const carriesFile = (event: DragEvent) => event.dataTransfer.types.includes("Files");
 
   const send = (documentType: string, documentText: string) => {
+    if (sending.current) return;
+    sending.current = true;
     const data = new FormData();
     data.set("documentType", documentType);
     data.set("text", documentText);
