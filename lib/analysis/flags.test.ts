@@ -193,6 +193,23 @@ test("the flags request asks for escapability reasoning that marks what could ha
   );
 });
 
+// A liability cap flag said "you could not recover more than $9,600" when the
+// next sentence said the limit "does not apply to losses caused on purpose or
+// by fraud" (FINDINGS.md rank 7). This checks the instruction is sent; the
+// smoke run on the clean test document shows whether the model follows it.
+test("the flags request asks the model to mention exceptions the document makes to the clause", async () => {
+  const model = stubModel(contract.sidecar);
+  await analyse(input, model, quiet);
+
+  const request = model.requests.find(({ shape }) => shape.name === FLAGS_SHAPE_NAME);
+  assert.ok(request, "a flags request was sent");
+  const textClaim = request.prompt.split("\n").find((line) => line.startsWith("- textClaim:"));
+  assert.ok(textClaim, "the request describes the text claim");
+  assert.match(textClaim, /exception/i);
+  assert.match(textClaim, /where/i);
+  assert.match(textClaim, /only exceptions the document contains/i);
+});
+
 // The summary gave the Client's duty to the reader: "You must give and
 // respond to two rounds of written feedback" (FINDINGS.md rank 6). Redline
 // does not know which party the reader is. This checks the instruction is
