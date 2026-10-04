@@ -37,6 +37,9 @@ export type AnalyseState =
       // Whose red lines the analysis looked for. "unreachable" means the
       // reader's own could not be read, so the eight defaults were used.
       redLines: ReaderRedLines["source"];
+      // Whether the reader was signed in, so the page sends them where they
+      // can answer the leverage question.
+      account: Account;
     }
   | {
       // The analysis failed and nothing from it is shown. The text and type
@@ -90,7 +93,14 @@ export async function analyseDocument(
       return { status: "failed", kind: result.kind, text, documentType };
     }
     const kept = await keepInLibrary(library, { documentType, text, analysis: result });
-    return { status: "done", text, result, library: kept, redLines: redLines.source };
+    return {
+      status: "done",
+      text,
+      result,
+      library: kept,
+      redLines: redLines.source,
+      account: accountOf(library),
+    };
   } catch (error) {
     // Analyse reports its own failures as an outcome, so this is a mistake in
     // the call itself. The details stay in the server log. Never log the
@@ -98,6 +108,16 @@ export async function analyseDocument(
     console.error("[redline] Analysis could not start:", error);
     return { status: "failed", kind: "unexpected", text, documentType };
   }
+}
+
+type Account = "signed-in" | "signed-out" | "none";
+
+// A reader whose session could not be checked may be signed in, so they are
+// treated as signed in, as before.
+function accountOf(library: Library): Account {
+  if (library.status === "no-storage") return "none";
+  if (library.status === "signed-out") return "signed-out";
+  return "signed-in";
 }
 
 // Saves a finished analysis to the reader's library when someone is signed

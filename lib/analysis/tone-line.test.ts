@@ -7,7 +7,7 @@ import { toneLine } from "./tone-line.ts";
 // change it (FINDINGS.md rank 4).
 
 test("a new result offers to change the answer in Red lines", () => {
-  const line = toneLine({ tone: "firm", leverage: "can-walk-away", view: { kind: "new" } });
+  const line = toneLine({ tone: "firm", leverage: "can-walk-away", view: { kind: "new", account: "signed-in" } });
   assert.equal(
     line.text,
     "Each counter-offer is worded firmly, because you said you could walk away from deals like this.",
@@ -61,3 +61,36 @@ test("a saved copy makes no claim about a change when today's answer cannot be r
   assert.equal(line.link, null);
 });
 
+// Signed out, the Red lines page does not show the leverage question, so a
+// link there sends the reader to a question they cannot reach (FINDINGS.md
+// rank 10).
+test("a signed-out reader is told to sign in to answer, not sent to Red lines", () => {
+  const line = toneLine({
+    tone: "request",
+    leverage: null,
+    view: { kind: "new", account: "signed-out" },
+  });
+  assert.equal(
+    line.text,
+    "Each counter-offer is worded as a request, because Redline does not know whether you could walk away.",
+  );
+  assert.deepEqual(line.link, { href: "/sign-in", label: "Sign in to answer that" });
+});
+
+test("where Redline has no sign-in, the line has no link", () => {
+  const line = toneLine({
+    tone: "request",
+    leverage: null,
+    view: { kind: "new", account: "none" },
+  });
+  assert.equal(line.link, null);
+});
+
+test("a signed-in reader who has not answered is sent to Red lines", () => {
+  const line = toneLine({
+    tone: "request",
+    leverage: null,
+    view: { kind: "new", account: "signed-in" },
+  });
+  assert.deepEqual(line.link, { href: "/red-lines", label: "Answer that in Red lines" });
+});

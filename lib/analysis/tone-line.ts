@@ -5,8 +5,9 @@ import type { CounterOfferTone, Leverage } from "./types.ts";
 // from the page so a test can read it.
 
 export type ToneLineView =
-  // A result the reader has just asked for.
-  | { kind: "new" }
+  // A result the reader has just asked for. `account` says whether they were
+  // signed in, signed out, or using a copy of Redline with no sign-in.
+  | { kind: "new"; account: "signed-in" | "signed-out" | "none" }
   // A copy opened from the library. `currentLeverage` is the reader's answer
   // today, or "unknown" when their red lines could not be read.
   | { kind: "saved"; currentLeverage: Leverage | null | "unknown" };
@@ -34,8 +35,15 @@ export function toneLine(input: {
       : leverage === "cannot-walk-away"
         ? "you said you could not walk away from deals like this"
         : "Redline does not know whether you could walk away";
+  const text = `Each counter-offer is ${TONE_LABEL[tone]}, because ${because}.`;
+  // Signed out, Red lines does not show the leverage question, so the link
+  // goes to sign-in instead. With no sign-in there is nowhere to answer it.
+  if (view.account === "none") return { text, link: null };
+  if (view.account === "signed-out") {
+    return { text, link: { href: "/sign-in", label: "Sign in to answer that" } };
+  }
   return {
-    text: `Each counter-offer is ${TONE_LABEL[tone]}, because ${because}.`,
+    text,
     link: {
       href: "/red-lines",
       label: leverage === null ? "Answer that in Red lines" : "Change your answer in Red lines",

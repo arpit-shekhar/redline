@@ -304,7 +304,11 @@ export function AnalyseForm({
       </div>
 
       {state.status === "done" && (
-        <ResultDocument text={state.text} result={state.result} toneView={{ kind: "new" }} />
+        <ResultDocument
+          text={state.text}
+          result={state.result}
+          toneView={{ kind: "new", account: state.account }}
+        />
       )}
     </>
   );
