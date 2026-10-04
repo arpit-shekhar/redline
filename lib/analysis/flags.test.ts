@@ -193,6 +193,22 @@ test("the flags request asks for escapability reasoning that marks what could ha
   );
 });
 
+// The summary gave the Client's duty to the reader: "You must give and
+// respond to two rounds of written feedback" (FINDINGS.md rank 6). Redline
+// does not know which party the reader is. This checks the instruction is
+// sent; the smoke run on the clean test document shows whether the model
+// follows it.
+test("the summary request asks the model to name the party each duty belongs to", async () => {
+  const model = stubModel(contract.sidecar);
+  await analyse(input, model, quiet);
+
+  const request = model.requests.find(({ shape }) => shape.name === "summary");
+  assert.ok(request, "a summary request was sent");
+  assert.match(request.prompt, /name the party/i);
+  assert.match(request.prompt, /do not know which party/i);
+  assert.doesNotMatch(request.prompt, /what they must do/);
+});
+
 test("must-change flags come first, then worth-raising, each in document order", async () => {
   const analysis = await analyse(input, stubModel(contract.sidecar), quiet);
 

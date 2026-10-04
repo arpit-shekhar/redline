@@ -271,7 +271,7 @@ function summaryPrompt(input: AnalyseInput): string {
   const type = DOCUMENT_TYPES.find((t) => t.value === input.documentType);
   return `This is a ${type?.label.toLowerCase()}.
 
-Summarise what it does to the person asked to sign it: what they must do, what they get, what it costs them, how long it lasts and how it ends. Describe what the document does. Do not list its headings or walk through its sections in order. Use short paragraphs separated by blank lines.
+Summarise what it does: who must do what, what each side gets, what it costs, how long it lasts and how it ends. You do not know which party the reader is, so name the party each duty belongs to, using the names the document gives them, for example "the Landlord repairs the roof". Do not write "you" for any party unless the document itself calls that party "you". Describe what the document does. Do not list its headings or walk through its sections in order. Use short paragraphs separated by blank lines.
 
 <document>
 ${input.text}
