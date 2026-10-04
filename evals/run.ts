@@ -246,7 +246,7 @@ async function analyseOne(
   } catch (error) {
     const reason = error instanceof Error ? `${error.name}: ${error.message}` : "Unknown error.";
     log(`Analysis refused. ${reason}`);
-    return { outcome: "failed", reason };
+    return { outcome: "failed", kind: "unexpected", reason };
   }
 }
 

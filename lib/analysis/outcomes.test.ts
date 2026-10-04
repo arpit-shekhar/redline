@@ -160,7 +160,7 @@ test("a model call that throws gives a failed outcome with nothing else", async 
   });
   const result = await analyse(contractInput, model, quiet);
 
-  assert.deepEqual(Object.keys(result).sort(), ["outcome", "reason"]);
+  assert.deepEqual(Object.keys(result).sort(), ["kind", "outcome", "reason"]);
   assert.equal(result.outcome, "failed");
   if (result.outcome !== "failed") return;
   assert.match(result.reason, /connection reset/);
@@ -176,7 +176,7 @@ test("a model that never replies gives a failed outcome once the time runs out",
   const result = await analyse(contractInput, model, quiet, 30);
 
   assert.equal(result.outcome, "failed");
-  assert.deepEqual(Object.keys(result).sort(), ["outcome", "reason"]);
+  assert.deepEqual(Object.keys(result).sort(), ["kind", "outcome", "reason"]);
   if (result.outcome !== "failed") return;
   assert.match(result.reason, /did not reply/);
   assert.ok(Date.now() - started < 2000, "it waited far longer than the time allowed");
@@ -201,9 +201,14 @@ test("a failure is logged without any document text", async () => {
   const model = stubModel(contract.sidecar, { rawReply: "Sorry, I cannot help with that." });
   await analyse(contractInput, model, (message) => messages.push(message));
 
-  assert.equal(messages.length, 1);
-  assert.match(messages[0], /Analysis failed/);
-  for (const clause of contract.sidecar.planted) {
-    assert.ok(!messages[0].includes(clause.sourceSentence.slice(0, 30)));
+  // An unreadable reply is tried once more, so there is a line for the retry
+  // and one for the failure.
+  assert.equal(messages.length, 2);
+  assert.match(messages[0], /Trying once more/);
+  assert.match(messages[1], /Analysis failed/);
+  for (const message of messages) {
+    for (const clause of contract.sidecar.planted) {
+      assert.ok(!message.includes(clause.sourceSentence.slice(0, 30)));
+    }
   }
 });

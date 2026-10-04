@@ -1,6 +1,7 @@
 "use server";
 
 import { analyse } from "@/lib/analysis/analyse.ts";
+import type { FailureKind } from "@/lib/analysis/failures.ts";
 import { isTooLong, tooLongMessage } from "@/lib/analysis/limits.ts";
 import { hasSomethingToCheck, redLinesToCheck } from "@/lib/analysis/red-lines.ts";
 import {
@@ -39,8 +40,10 @@ export type AnalyseState =
     }
   | {
       // The analysis failed and nothing from it is shown. The text and type
-      // are kept so the reader can retry without pasting again.
+      // are kept so the reader can retry without pasting again. `kind` says
+      // what went wrong, for the sentence the reader sees.
       status: "failed";
+      kind: FailureKind;
       text: string;
       documentType: DocumentType;
     };
@@ -83,7 +86,9 @@ export async function analyseDocument(
       leverage: redLines.settings.leverage,
     });
     // Analyse has already written why it failed to the server log.
-    if (result.outcome === "failed") return { status: "failed", text, documentType };
+    if (result.outcome === "failed") {
+      return { status: "failed", kind: result.kind, text, documentType };
+    }
     const kept = await keepInLibrary(library, { documentType, text, analysis: result });
     return { status: "done", text, result, library: kept, redLines: redLines.source };
   } catch (error) {
@@ -91,7 +96,7 @@ export async function analyseDocument(
     // the call itself. The details stay in the server log. Never log the
     // document text.
     console.error("[redline] Analysis could not start:", error);
-    return { status: "failed", text, documentType };
+    return { status: "failed", kind: "unexpected", text, documentType };
   }
 }
 

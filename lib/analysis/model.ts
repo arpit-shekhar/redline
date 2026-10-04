@@ -65,6 +65,14 @@ export class ModelUnavailableError extends Error {
 // OpenRouter could not be reached, refused the request, or sent no reply.
 export class ModelCallError extends Error {
   name = "ModelCallError";
+  // The HTTP status OpenRouter answered with. Missing when it could not be
+  // reached or sent no reply text.
+  readonly status?: number;
+
+  constructor(message: string, options: { cause?: unknown; status?: number } = {}) {
+    super(message, { cause: options.cause });
+    this.status = options.status;
+  }
 }
 
 export type ModelEnv = {
@@ -139,6 +147,7 @@ export function createOpenRouterClient(
       if (!response.ok) {
         throw new ModelCallError(
           `OpenRouter returned HTTP ${response.status}.${await errorDetail(response)}`,
+          { status: response.status },
         );
       }
 
@@ -179,6 +188,7 @@ async function checkModelIsListed(
   if (!response.ok) {
     throw new ModelCallError(
       `Could not read OpenRouter's model list: HTTP ${response.status}.`,
+      { status: response.status },
     );
   }
   const body = await response.json().catch(() => undefined);

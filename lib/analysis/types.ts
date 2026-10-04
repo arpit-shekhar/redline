@@ -1,3 +1,5 @@
+import type { FailureKind } from "./failures.ts";
+
 export const DOCUMENT_TYPES = [
   { value: "contract", label: "Contract" },
   { value: "lease", label: "Lease" },
@@ -165,6 +167,8 @@ export type WithheldResult = {
 // read. Nothing from the run is kept, so no part of a result can be shown.
 export type FailedAnalysis = {
   outcome: "failed";
+  // What kind of failure it was, for the sentence the reader sees.
+  kind: FailureKind;
   // For the server log only: what went wrong, never any document text.
   reason: string;
 };

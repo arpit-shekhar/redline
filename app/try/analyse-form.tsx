@@ -8,6 +8,7 @@ import {
   type DragEvent,
   type ReactNode,
 } from "react";
+import { FAILURE_SENTENCE } from "@/lib/analysis/failures.ts";
 import { isTooLong, tooLongMessage } from "@/lib/analysis/limits.ts";
 import { DOCUMENT_TYPES } from "@/lib/analysis/types.ts";
 import type { Extraction } from "@/lib/extraction/extract.ts";
@@ -271,8 +272,9 @@ export function AnalyseForm({
           {state.status === "failed" && (
             <div role="alert" className="flex flex-col items-start gap-4 border border-ink-soft bg-sheet p-4">
               <p className="max-w-[60ch] text-ink">
-                The analysis failed, so Redline shows none of it. You do not need to
-                paste the document again.
+                The analysis failed, so Redline shows none of it.{" "}
+                {FAILURE_SENTENCE[state.kind]} You do not need to paste the document
+                again.
               </p>
               <button
                 type="button"

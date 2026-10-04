@@ -5,6 +5,13 @@ import {
   rankFlags,
   type HeldBack,
 } from "./check-flags.ts";
+import {
+  AnalysisTimedOutError,
+  describeError,
+  failureKind,
+  retryOnce,
+  UnreadableReplyError,
+} from "./failures.ts";
 import { isTooLong, MAX_DOCUMENT_CHARACTERS } from "./limits.ts";
 import {
   MODEL_TIMEOUT_MS,
@@ -23,14 +30,11 @@ import {
 } from "./types.ts";
 
 // The model's reply could not be read as an analysis, so nothing is shown.
-export class AnalysisFailedError extends Error {
+export class AnalysisFailedError extends UnreadableReplyError {
   name = "AnalysisFailedError";
 }
 
-// The model did not reply in time.
-export class AnalysisTimedOutError extends Error {
-  name = "AnalysisTimedOutError";
-}
+export { AnalysisTimedOutError };
 
 // Every red line is switched off, so there is nothing to look for. Analyse
 // refuses before calling the model: a clean result with an empty checklist
@@ -85,7 +89,10 @@ const serverLog: Log = (message) => console.warn(`[redline] ${message}`);
 //
 // The outcome is all or nothing. If either request fails, takes longer than
 // `timeoutMs`, or sends a reply that cannot be read, the outcome is "failed"
-// and nothing from the run is returned, not even the summary.
+// and nothing from the run is returned, not even the summary. After a
+// temporary failure both requests are sent once more, inside the same time
+// limit (see failures.ts). A failed outcome says what kind of failure it
+// was, so the reader can be told.
 export async function analyse(
   input: AnalyseInput,
   model: ModelClient = openRouterClient,
@@ -106,25 +113,30 @@ export async function analyse(
   }
 
   try {
-    const [summaryReply, flagsReply] = await withTimeout(timeoutMs, (signal) =>
-      Promise.all([
-        model.complete({
-          system: SYSTEM,
-          prompt: summaryPrompt(input),
-          shape: SUMMARY_SHAPE,
-          signal,
-        }),
-        model.complete({
-          system: SYSTEM,
-          prompt: flagsPrompt(input, redLines, toneFor(input.leverage)),
-          shape: flagsShape(checkedFor),
-          signal,
-        }),
-      ]),
+    const [summary, candidates] = await withTimeout(timeoutMs, (deadline) =>
+      retryOnce(
+        deadline,
+        async (signal) => {
+          const [summaryReply, flagsReply] = await Promise.all([
+            model.complete({
+              system: SYSTEM,
+              prompt: summaryPrompt(input),
+              shape: SUMMARY_SHAPE,
+              signal,
+            }),
+            model.complete({
+              system: SYSTEM,
+              prompt: flagsPrompt(input, redLines, toneFor(input.leverage)),
+              shape: flagsShape(checkedFor),
+              signal,
+            }),
+          ]);
+          return [readSummary(summaryReply), readFlagList(flagsReply)] as const;
+        },
+        log,
+      ),
     );
 
-    const summary = readSummary(summaryReply);
-    const candidates = readFlagList(flagsReply);
     const checked = checkFlags(input.text, candidates, checkedFor);
     const flags = withinSeverity(checked.flags, redLines);
     const counterOfferTone = toneFor(input.leverage);
@@ -158,10 +170,9 @@ export async function analyse(
       beforeChecks,
     };
   } catch (error) {
-    const reason =
-      error instanceof Error ? `${error.name}: ${error.message}` : "Unknown error.";
+    const reason = describeError(error);
     log(`Analysis failed. ${reason}`);
-    return { outcome: "failed", reason };
+    return { outcome: "failed", kind: failureKind(error), reason };
   }
 }
 
