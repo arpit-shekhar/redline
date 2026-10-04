@@ -47,7 +47,7 @@ export default function Landing() {
                   Contracts, leases, freelance agreements and terms of service,
                   as pasted text. Not legal advice.
                   <br />
-                  Today it gives a plain-English summary. Flags come next.
+                  It starts with a plain-English summary of the whole document.
                 </p>
               </div>
             </div>
@@ -61,15 +61,14 @@ export default function Landing() {
             Check any flag against your own copy
           </h2>
           <p className={bodyClass}>
-            Flags are the next part of Redline to ship. Each one will quote its
-            sentence exactly as your document has it, typos included, so you
-            can search your copy and find it.
+            Each flag quotes its sentence exactly as your document has it,
+            typos included, so you can search your copy and find it.
           </p>
           <p className={bodyClass}>
-            Before showing you anything, Redline will look for every quoted
+            Before showing you anything, Redline looks for every quoted
             sentence in the text you gave it. If a sentence is not there word
-            for word, its flag will be dropped, and the result will say how
-            many were dropped.
+            for word, Redline holds its flag back, and the result says how
+            many it held back.
           </p>
         </div>
 
