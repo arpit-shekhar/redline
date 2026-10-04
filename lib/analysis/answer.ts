@@ -5,6 +5,7 @@ import {
   type Log,
 } from "./analyse.ts";
 import { fold, locate } from "./check-flags.ts";
+import { describeError, retryOnce, UnreadableReplyError } from "./failures.ts";
 import { isTooLong, MAX_DOCUMENT_CHARACTERS, MAX_QUESTION_CHARACTERS } from "./limits.ts";
 import { MODEL_TIMEOUT_MS, openRouterClient, type ModelClient } from "./model.ts";
 import { ANSWER_SHAPE } from "./reply-shapes.ts";
@@ -65,7 +66,8 @@ export function asksAboutLegality(question: string): boolean {
 // Answers one question from the document text. Throws only when the input
 // cannot be used (an empty or too-long question, or a too-long document).
 // Everything that goes wrong with the model comes back as the "failed"
-// outcome.
+// outcome. After a temporary failure the question is sent once more, inside
+// the same time limit (see failures.ts).
 export async function answer(
   documentText: string,
   question: string,
@@ -98,18 +100,23 @@ export async function answer(
 
   let reply: ReadReply;
   try {
-    const raw = await withTimeout(timeoutMs, (signal) =>
-      model.complete({
-        system: SYSTEM,
-        prompt: answerPrompt(documentText, asked),
-        shape: ANSWER_SHAPE,
-        signal,
-      }),
+    reply = await withTimeout(timeoutMs, (deadline) =>
+      retryOnce(
+        deadline,
+        async (signal) =>
+          readReply(
+            await model.complete({
+              system: SYSTEM,
+              prompt: answerPrompt(documentText, asked),
+              shape: ANSWER_SHAPE,
+              signal,
+            }),
+          ),
+        log,
+      ),
     );
-    reply = readReply(raw);
   } catch (error) {
-    const reason =
-      error instanceof Error ? `${error.name}: ${error.message}` : "Unknown error.";
+    const reason = describeError(error);
     log(`Answer failed. ${reason}`);
     return { outcome: "failed", reason };
   }
@@ -141,7 +148,7 @@ type ReadReply =
   | { outcome: "answered"; answer: string; passage: string }
   | { outcome: "not-addressed" | "legality" };
 
-class AnswerUnreadableError extends Error {
+class AnswerUnreadableError extends UnreadableReplyError {
   name = "AnswerUnreadableError";
 }
 

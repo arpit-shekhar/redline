@@ -6,7 +6,7 @@ import {
   NOT_ADDRESSED_STATEMENT,
   QuestionNotUsableError,
 } from "./answer.ts";
-import type { ModelClient } from "./model.ts";
+import { ModelConfigError, type ModelClient } from "./model.ts";
 import type { AnswerOutcome } from "./types.ts";
 import { loadFixture, type FixtureQuestion } from "../../tests/support/fixtures.ts";
 import { stubModel } from "../../tests/support/stub-model.ts";
@@ -214,6 +214,50 @@ test("a model that does not reply in time gives the failure outcome", async () =
     timeoutMs: 20,
   });
   assert.equal(outcome.outcome, "failed");
+});
+
+// A question failed once with "Redline could not get an answer this time.",
+// then worked when asked again (FINDINGS.md rank 11). A temporary failure is
+// now tried once more before the reader sees anything.
+test("an unreadable reply is tried once more, and a good second reply is answered", async () => {
+  const good = stubModel(contract.sidecar);
+  let calls = 0;
+  const model: ModelClient = {
+    complete(request) {
+      return calls++ === 0 ? Promise.resolve('{"outcome": "answ') : good.complete(request);
+    },
+  };
+
+  const outcome = await ask(answered.question, model);
+  assert.equal(outcome.outcome, "answered");
+  assert.equal(calls, 2);
+});
+
+test("a setup problem or a timeout is not tried again", async () => {
+  let calls = 0;
+  const misconfigured: ModelClient = {
+    async complete() {
+      calls++;
+      throw new ModelConfigError("OPENROUTER_MODEL is missing. Add it to .env.local.");
+    },
+  };
+  assert.equal((await ask(answered.question, misconfigured)).outcome, "failed");
+  assert.equal(calls, 1);
+
+  calls = 0;
+  const silent: ModelClient = {
+    complete: () => {
+      calls++;
+      return new Promise<string>(() => {});
+    },
+  };
+  const outcome = await answer(contract.text, answered.question, {
+    model: silent,
+    log: quiet,
+    timeoutMs: 20,
+  });
+  assert.equal(outcome.outcome, "failed");
+  assert.equal(calls, 1);
 });
 
 test("an empty or too-long question is refused before the model is called", async () => {
