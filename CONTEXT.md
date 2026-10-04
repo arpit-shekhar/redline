@@ -12,7 +12,9 @@ _Avoid_: file, upload, contract (a contract is one of several document types)
 
 **Flag**:
 A single clause in a document identified as capable of hurting the user, carrying
-a severity and a source sentence.
+a severity and a source sentence. There is one flag per source sentence. When a
+sentence crosses more than one red line, its one flag names every red line it
+crosses, takes the highest severity among them, and counts once.
 _Avoid_: issue, finding, alert, risk, red flag
 
 **Source sentence**:
