@@ -41,6 +41,12 @@ up, and none of the text comes from a real person's contract.
   happen to the reader says may, might or could. Run it with
   `npm run evals -- tests/fixtures/certain-outcomes`. The offline tests do
   not see these either.
+- `round-1/`: Document C from FINDINGS.md again, on its own, for FINDINGS.md
+  rank 8: the same document came back must change in one run and worth
+  raising in the next. Running the folder several times shows how often the
+  automatic renewal flag's severity changes between runs, at two model calls
+  a run. Run it with `npm run evals -- tests/fixtures/round-1`. The offline
+  tests do not see it.
 - `.gitattributes`: stops git from changing line endings in these files. One
   planted sentence runs across a line break, and the answer key records that
   break exactly.

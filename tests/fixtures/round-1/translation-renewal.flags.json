@@ -1,0 +1,16 @@
+{
+  "document": "translation-renewal.txt",
+  "documentType": "freelance-agreement",
+  "planted": [
+    {
+      "clauseType": "Weak freelance payment terms",
+      "sourceSentence": "El pago se hará dentro de los 120 días siguientes a la aprobación final del Cliente, y el Cliente decide cuándo da su aprobación.",
+      "expectedSeverity": "must-change"
+    },
+    {
+      "clauseType": "Automatic renewal",
+      "sourceSentence": "Este contrato se renueva automáticamente cada año por otros doce meses, salvo que la Traductora lo cancele por carta certificada con 90 días de antelación.",
+      "expectedSeverity": "worth-raising"
+    }
+  ]
+}

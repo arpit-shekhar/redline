@@ -15,6 +15,14 @@ const PROVIDER = {
 
 const REASONING = { effort: "low" };
 
+// Temperature sets how random the model's choices are. Left unset, this model
+// runs at 1, and the same document came back must change in one run and
+// worth raising in the next. At 0 it gives its most likely answer each time,
+// which makes runs agree more often but not always. Fireworks accepts this
+// setting. It does not accept `seed`, so none is sent: with
+// require_parameters on, that would make every call fail.
+const TEMPERATURE = 0;
+
 // How long one analysis may wait for the model, in milliseconds. After this
 // the analysis stops, cancels any request still running, and reports that it
 // failed. A long document can take the model a minute to read, so this
@@ -113,6 +121,7 @@ export function createOpenRouterClient(
             ],
             provider: PROVIDER,
             reasoning: REASONING,
+            temperature: TEMPERATURE,
             response_format: {
               type: "json_schema",
               json_schema: {

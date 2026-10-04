@@ -87,6 +87,21 @@ test("builds the request from the environment and the owner's settings", async (
   ]);
 });
 
+// The same document got must change in one run and worth raising in the next
+// (FINDINGS.md rank 8). Without a temperature the model runs at its default
+// of 1, fully random sampling. Temperature 0 asks for its most likely answer
+// each time. No seed: Fireworks does not accept one, and with
+// require_parameters on, sending it would make every call fail.
+test("asks for the least random answer, and sends no seed", async () => {
+  const openRouter = fakeOpenRouter([MODEL]);
+  const client = createOpenRouterClient({ env, fetch: openRouter.fetch });
+  await client.complete(request);
+
+  const [call] = openRouter.chatCalls();
+  assert.equal(call.body?.temperature, 0);
+  assert.equal(call.body?.seed, undefined);
+});
+
 test("uses whatever model the environment names", async () => {
   const other = "another-lab/another-model";
   const openRouter = fakeOpenRouter([other]);
