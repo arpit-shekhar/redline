@@ -301,7 +301,9 @@ export function AnalyseForm({
         </section>
       </div>
 
-      {state.status === "done" && <ResultDocument text={state.text} result={state.result} />}
+      {state.status === "done" && (
+        <ResultDocument text={state.text} result={state.result} toneView={{ kind: "new" }} />
+      )}
     </>
   );
 }

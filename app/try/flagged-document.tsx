@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import type { ToneLineView } from "@/lib/analysis/tone-line.ts";
 import type {
   CounterOfferTone,
   Flag,
@@ -36,6 +37,7 @@ export function FlaggedDocument({
   dropped,
   tone,
   leverage,
+  toneView,
 }: {
   text: string;
   flags: Flag[];
@@ -44,6 +46,7 @@ export function FlaggedDocument({
   // Missing only on a library copy saved before counter-offers existed.
   tone?: CounterOfferTone;
   leverage?: Leverage | null;
+  toneView: ToneLineView;
 }) {
   const ranked: RankedFlag[] = flags.map((flag, index) => ({ ...flag, rank: index + 1 }));
   const [active, setActive] = useState(1);
@@ -140,7 +143,7 @@ export function FlaggedDocument({
             </p>
           )}
           {flags.length > 0 && tone && (
-            <ToneLine tone={tone} leverage={leverage ?? null} />
+            <ToneLine tone={tone} leverage={leverage ?? null} view={toneView} />
           )}
           {dropped > 0 && (
             <p className="text-base leading-relaxed text-ink">

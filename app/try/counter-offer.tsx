@@ -2,17 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { TONE_LABEL, toneLine, type ToneLineView } from "@/lib/analysis/tone-line.ts";
 import type { CounterOfferTone, Leverage } from "@/lib/analysis/types.ts";
 
 // The counter-offer part of a flag's note: Redline's drafted wording in a box
 // the reader can edit, and one button that copies whatever the box holds now.
 // Edits live only on this page. The parent keeps them, so they survive
 // switching between flags.
-
-const TONE_LABEL: Record<CounterOfferTone, string> = {
-  firm: "worded firmly",
-  request: "worded as a request",
-};
 
 // How long "Copied" shows before the button goes back to "Copy".
 const CONFIRM_MS = 2500;
@@ -109,27 +105,29 @@ export function CounterOfferDraft({
 }
 
 // One line under the flag count saying how the counter-offers were worded
-// and why, with a link to change the leverage answer.
+// and why. Its wording comes from toneLine.
 export function ToneLine({
   tone,
   leverage,
+  view,
 }: {
   tone: CounterOfferTone;
   leverage: Leverage | null;
+  view: ToneLineView;
 }) {
-  const because =
-    leverage === "can-walk-away"
-      ? "you said you could walk away from deals like this"
-      : leverage === "cannot-walk-away"
-        ? "you said you could not walk away from deals like this"
-        : "Redline does not know whether you could walk away";
+  const { text, link } = toneLine({ tone, leverage, view });
   return (
     <p className="text-base leading-relaxed text-ink">
-      Each counter-offer is {TONE_LABEL[tone]}, because {because}.{" "}
-      <Link href="/red-lines" className="font-medium text-pen underline">
-        {leverage === null ? "Answer that in Red lines" : "Change your answer in Red lines"}
-      </Link>
-      .
+      {text}
+      {link && (
+        <>
+          {" "}
+          <Link href={link.href} className="font-medium text-pen underline">
+            {link.label}
+          </Link>
+          .
+        </>
+      )}
     </p>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ResultDocument, ResultSummary } from "@/app/try/result-view.tsx";
+import { readerRedLines } from "@/lib/storage/reader-red-lines.ts";
 import { openLibrary } from "@/lib/storage/session.ts";
 import type { SavedDocument } from "@/lib/storage/types.ts";
 import { deleteSavedDocument } from "../actions.ts";
@@ -37,6 +38,11 @@ export default async function SavedDocumentPage({ params, searchParams }: PagePr
       </LibrarySheet>
     );
   }
+
+  // The reader's leverage answer today, so a saved copy can say whether its
+  // counter-offers still follow it.
+  const found = await readerRedLines(library);
+  const currentLeverage = found.source === "yours" ? found.settings.leverage : "unknown";
 
   const here = `/library/${document.id}`;
   return (
@@ -93,7 +99,11 @@ export default async function SavedDocumentPage({ params, searchParams }: PagePr
         </section>
       </div>
 
-      <ResultDocument text={document.text} result={document.analysis} />
+      <ResultDocument
+        text={document.text}
+        result={document.analysis}
+        toneView={{ kind: "saved", currentLeverage }}
+      />
     </>
   );
 }

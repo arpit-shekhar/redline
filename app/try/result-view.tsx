@@ -1,5 +1,6 @@
 "use client";
 
+import type { ToneLineView } from "@/lib/analysis/tone-line.ts";
 import type { AnalysisResult } from "@/lib/analysis/types.ts";
 import { CleanDocument } from "./clean-document.tsx";
 import { FlaggedDocument } from "./flagged-document.tsx";
@@ -38,7 +39,17 @@ export function ResultSummary({ text, result }: { text: string; result: Analysis
 // The document itself as the next sheet: with its tabs when something was
 // flagged, or with its checklist when nothing was. A withheld result has no
 // sheet here.
-export function ResultDocument({ text, result }: { text: string; result: AnalysisResult }) {
+export function ResultDocument({
+  text,
+  result,
+  toneView,
+}: {
+  text: string;
+  result: AnalysisResult;
+  // Whether this is a new result or a library copy, for the line saying how
+  // the counter-offers were worded.
+  toneView: ToneLineView;
+}) {
   if (result.outcome === "flagged") {
     return (
       <FlaggedDocument
@@ -47,6 +58,7 @@ export function ResultDocument({ text, result }: { text: string; result: Analysi
         dropped={result.dropped}
         tone={result.counterOfferTone}
         leverage={result.leverage}
+        toneView={toneView}
       />
     );
   }
